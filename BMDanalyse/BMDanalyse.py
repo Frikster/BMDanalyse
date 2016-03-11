@@ -11,7 +11,7 @@ from pyqtgraph.widgets.GraphicsLayoutWidget import GraphicsLayoutWidget
 import numpy as np
 from pyqtgraph.widgets.MatplotlibWidget import MatplotlibWidget
 #import matplotlib_fix
-import matplotlib.backends.qt_editor.figureoptions as figureoptions
+#import matplotlib.backends.qt_editor.figureoptions as figureoptions
 #figureoptions.figure_edit = matplotlib_fix.figure_edit
 from PIL import Image
 import types

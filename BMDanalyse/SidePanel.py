@@ -110,7 +110,7 @@ class SidePanel(QtGui.QWidget):
         self.roiInfoBox  = QtGui.QWidget()
         roiInfoBoxLayout = QtGui.QGridLayout()
         self.roiInfoBox.setLayout(roiInfoBoxLayout)
-        self.roiNameLabel  = QtGui.QLabel("ROI name")
+        self.roiNameLabel  = QtGui.QLabel("Frame reference for alignment")
         self.roiNameValue  = QtGui.QLineEdit("")
         self.roiPosLabel   = QtGui.QLabel("ROI position")
         self.roiPosValue   = QtGui.QLineEdit("") 
