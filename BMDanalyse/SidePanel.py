@@ -32,10 +32,10 @@ class SidePanel(QtGui.QWidget):
         imageFileListLabel = QtGui.QLabel("Loaded images")
         self.frameRefNameLabel  = QtGui.QLabel("Frame reference for alignment")
         self.frameRefNameValue  = QtGui.QLineEdit("400")
-        self.frameRateLabel   = QtGui.QLabel("Width")
-        self.frameRateValue   = QtGui.QLineEdit("256")
-        self.f_lowLabel  = QtGui.QLabel("Height")
-        self.f_lowValue  = QtGui.QLineEdit("256")
+        self.vidWidthLabel   = QtGui.QLabel("Width")
+        self.vidWidthValue   = QtGui.QLineEdit("256")
+        self.vidHeightLabel  = QtGui.QLabel("Height")
+        self.vidHeightValue  = QtGui.QLineEdit("256")
         self.imageFileList = QtGui.QListWidget() 
         
         # Image buttons
@@ -71,10 +71,10 @@ class SidePanel(QtGui.QWidget):
 
         imageToolboxLayout.addWidget(self.frameRefNameLabel)
         imageToolboxLayout.addWidget(self.frameRefNameValue)
-        imageToolboxLayout.addWidget(self.frameRateLabel)
-        imageToolboxLayout.addWidget(self.frameRateValue)
-        imageToolboxLayout.addWidget(self.f_lowLabel)
-        imageToolboxLayout.addWidget(self.f_lowValue)
+        imageToolboxLayout.addWidget(self.vidWidthLabel)
+        imageToolboxLayout.addWidget(self.vidWidthValue)
+        imageToolboxLayout.addWidget(self.vidHeightLabel)
+        imageToolboxLayout.addWidget(self.vidHeightValue)
 
         imageToolboxLayout.addWidget(self.imageFileList)         
         imageToolboxLayout.addWidget(self.imageFileTools)

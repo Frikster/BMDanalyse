@@ -13,6 +13,7 @@ from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.widgets.GraphicsLayoutWidget import GraphicsLayoutWidget
 import numpy as np
 from pyqtgraph.widgets.MatplotlibWidget import MatplotlibWidget
+import matplotlib.pyplot as plt
 from PIL import Image
 import types
 import SPCExplorer.filter_jeff as fj
@@ -237,7 +238,7 @@ class MainWindow(QtGui.QMainWindow):
     
     def loadImages(self):
         """ Load an image to be analysed """
-        newImages = {}
+        newVids = {}
         fileNames = QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
         
         # Fix for PySide. PySide doesn't support QStringList types. PyQt4 getOpenFileNames returns a QStringList, whereas PySide
@@ -248,24 +249,28 @@ class MainWindow(QtGui.QMainWindow):
         if len(fileNames)>0:
             for fileName in fileNames:
                 if fileName!='':
-                    frames = fj.get_green_frames(str(fileName), width, height)
-                    frame = frames[self.ui.spinBox_frameRef.value()]
+                    width = int(self.sidePanel.vidWidthValue.text())
+                    height = int(self.sidePanel.vidHeightValue.text())
+                    frameRef = int(self.sidePanel.frameRefNameValue.text())
 
+                    frames = fj.get_frames(str(fileName), width, height)
+                    frame = frames[frameRef]
 
+                    plt.imshow(frame)
 
-
-                    imgarr = np.array(Image.open(str(fileName)))
+                    imgarr = frame
+                    #imgarr = np.array(Image.open(str(fileName)))
                     imgarr = imgarr.swapaxes(0,1)
                     if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
-                    elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]                   
-                    newImages[fileName] = imgarr
+                    elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
+                    newVids[fileName] = imgarr
             
             # Add filenames to list widget. Only add new filenames. If filename exists aready, then
             # it will not be added, but data will be updated
-            for fileName in sorted(newImages.keys()):
+            for fileName in sorted(newVids.keys()):
                 if not self.imageFiles.has_key(fileName):
                     self.sidePanel.addImageToList(fileName)
-                self.imageFiles[fileName] = newImages[fileName]
+                self.imageFiles[fileName] = newVids[fileName]
             
             # Show image in Main window
             self.vb.enableAutoRange()
