@@ -5,16 +5,18 @@
 # This file is part of BMDanalyse - See LICENSE.txt for information on usage and redistribution
 
 import os, sys, matplotlib, matplotlib.pyplot
+
+
+
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.widgets.GraphicsLayoutWidget import GraphicsLayoutWidget
 import numpy as np
 from pyqtgraph.widgets.MatplotlibWidget import MatplotlibWidget
-#import matplotlib_fix
-#import matplotlib.backends.qt_editor.figureoptions as figureoptions
-#figureoptions.figure_edit = matplotlib_fix.figure_edit
 from PIL import Image
 import types
+import SPCExplorer.filter_jeff as fj
+import SPCExplorer.displacement_jeff as dj
 
 from customItems import QActionCustom
 from ViewBoxCustom import MultiRoiViewBox, ImageAnalysisViewBox
@@ -246,6 +248,12 @@ class MainWindow(QtGui.QMainWindow):
         if len(fileNames)>0:
             for fileName in fileNames:
                 if fileName!='':
+                    frames = fj.get_green_frames(str(fileName), width, height)
+                    frame = frames[self.ui.spinBox_frameRef.value()]
+
+
+
+
                     imgarr = np.array(Image.open(str(fileName)))
                     imgarr = imgarr.swapaxes(0,1)
                     if   imgarr.ndim==2: imgarr = imgarr[:,::-1]

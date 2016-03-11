@@ -30,6 +30,12 @@ class SidePanel(QtGui.QWidget):
     
         # Image filelist
         imageFileListLabel = QtGui.QLabel("Loaded images")
+        self.frameRefNameLabel  = QtGui.QLabel("Frame reference for alignment")
+        self.frameRefNameValue  = QtGui.QLineEdit("400")
+        self.frameRateLabel   = QtGui.QLabel("Width")
+        self.frameRateValue   = QtGui.QLineEdit("256")
+        self.f_lowLabel  = QtGui.QLabel("Height")
+        self.f_lowValue  = QtGui.QLineEdit("256")
         self.imageFileList = QtGui.QListWidget() 
         
         # Image buttons
@@ -62,6 +68,14 @@ class SidePanel(QtGui.QWidget):
         imageToolboxLayout = QtGui.QVBoxLayout()
         self.imageToolbox.setLayout(imageToolboxLayout)       
         imageToolboxLayout.addWidget(imageFileListLabel)
+
+        imageToolboxLayout.addWidget(self.frameRefNameLabel)
+        imageToolboxLayout.addWidget(self.frameRefNameValue)
+        imageToolboxLayout.addWidget(self.frameRateLabel)
+        imageToolboxLayout.addWidget(self.frameRateValue)
+        imageToolboxLayout.addWidget(self.f_lowLabel)
+        imageToolboxLayout.addWidget(self.f_lowValue)
+
         imageToolboxLayout.addWidget(self.imageFileList)         
         imageToolboxLayout.addWidget(self.imageFileTools)
     
@@ -110,22 +124,22 @@ class SidePanel(QtGui.QWidget):
         self.roiInfoBox  = QtGui.QWidget()
         roiInfoBoxLayout = QtGui.QGridLayout()
         self.roiInfoBox.setLayout(roiInfoBoxLayout)
-        self.roiNameLabel  = QtGui.QLabel("Frame reference for alignment")
+        self.roiNameLabel  = QtGui.QLabel("delete")
         self.roiNameValue  = QtGui.QLineEdit("")
-        self.roiPosLabel   = QtGui.QLabel("ROI position")
-        self.roiPosValue   = QtGui.QLineEdit("") 
-        self.roiSizeLabel  = QtGui.QLabel("ROI size")
-        self.roiSizeValue  = QtGui.QLineEdit("")  
-        self.roiAngleLabel = QtGui.QLabel("ROI angle")
-        self.roiAngleValue = QtGui.QLineEdit("")  
+        self.frameRateLabel   = QtGui.QLabel("Frame Rate (Hz)")
+        self.frameRateValue   = QtGui.QLineEdit("30")
+        self.f_lowLabel  = QtGui.QLabel("f_low")
+        self.f_lowValue  = QtGui.QLineEdit("0.3")
+        self.f_highLabel = QtGui.QLabel("f_high")
+        self.f_highValue = QtGui.QLineEdit("3")
         roiInfoBoxLayout.addWidget(self.roiNameLabel,  0, 0)
         roiInfoBoxLayout.addWidget(self.roiNameValue,  0, 1)
-        roiInfoBoxLayout.addWidget(self.roiPosLabel,   1, 0)
-        roiInfoBoxLayout.addWidget(self.roiPosValue,   1, 1) 
-        roiInfoBoxLayout.addWidget(self.roiSizeLabel,  2, 0)
-        roiInfoBoxLayout.addWidget(self.roiSizeValue,  2, 1)    
-        roiInfoBoxLayout.addWidget(self.roiAngleLabel, 3, 0)
-        roiInfoBoxLayout.addWidget(self.roiAngleValue, 3, 1)           
+        roiInfoBoxLayout.addWidget(self.frameRateLabel, 1, 0)
+        roiInfoBoxLayout.addWidget(self.frameRateValue, 1, 1)
+        roiInfoBoxLayout.addWidget(self.f_lowLabel, 2, 0)
+        roiInfoBoxLayout.addWidget(self.f_lowValue, 2, 1)
+        roiInfoBoxLayout.addWidget(self.f_highLabel, 3, 0)
+        roiInfoBoxLayout.addWidget(self.f_highValue, 3, 1)
         
         # ROI Toolbox
         self.roiToolbox  = QtGui.QFrame()
@@ -186,11 +200,12 @@ class SidePanel(QtGui.QWidget):
             items.append(self.imageFileList.item(index))        
         return items
         
-    def updateRoiInfoBox(self,name="",pos="",size="",angle=""):
-        self.roiNameValue.setText(name)
-        self.roiPosValue.setText(pos)
-        self.roiSizeValue.setText(size)
-        self.roiAngleValue.setText(angle)
+    # def updateRoiInfoBox(self,name="",pos="",size="",angle=""):
+    #     print("Obsolete function")
+    #     self.roiNameValue.setText(name)
+    #     self.frameRateValue.setText(pos)
+    #     self.f_lowValue.setText(size)
+    #     self.f_highValue.setText(angle)
         
 class popupMenu(QtGui.QWidget):
 
