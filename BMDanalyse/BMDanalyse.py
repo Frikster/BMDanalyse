@@ -7,7 +7,6 @@
 import os, sys, matplotlib, matplotlib.pyplot
 
 
-
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.widgets.GraphicsLayoutWidget import GraphicsLayoutWidget
@@ -255,8 +254,6 @@ class MainWindow(QtGui.QMainWindow):
 
                     frames = fj.get_frames(str(fileName), width, height)
                     frame = frames[frameRef]
-
-                    plt.imshow(frame)
 
                     imgarr = frame
                     #imgarr = np.array(Image.open(str(fileName)))
