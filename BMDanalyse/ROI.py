@@ -10,6 +10,7 @@ import pyqtgraph.functions as fn
 from pyqtgraph.Point import Point
 from customItems import QMenuCustom
 import numpy as np
+import matplotlib.pylab as plt
 
 __all__ = ['ROI', 'Handle','PolylineSegment','RectROIcustom','PolyLineROIcustom']
 
@@ -486,10 +487,15 @@ class PolyLineROIcustom(selectableROI,ROI):
         p.drawPath(self.shape())
         p.end()
         mask = imageToArray(im)[:,:,0].astype(float) / 255.
-        shape = [1] * data.ndim
-        shape[axes[0]] = sliced.shape[axes[0]]
-        shape[axes[1]] = sliced.shape[axes[1]]
-        return sliced * mask.reshape(shape)  
+        # Old code that doesn't seem to do what it should
+        #shape = [1] * data.ndim
+        #shape[axes[0]] = sliced.shape[axes[0]]
+        #shape[axes[1]] = sliced.shape[axes[1]]
+        #return sliced * mask.reshape(shape)
+
+        # Return image with mask applied
+        reshaped_mask = mask.T[:, :, np.newaxis]
+        return sliced * reshaped_mask
 
 def imageToArray(img):
     """

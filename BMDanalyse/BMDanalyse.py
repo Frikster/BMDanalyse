@@ -174,7 +174,7 @@ class MainWindow(QtGui.QMainWindow):
         self.aboutAct = QtGui.QAction("&About", self.viewMain, shortcut='F1', triggered=self.onAbout)
         self.aboutMenu.addAction(self.aboutAct)
         
-        
+
     def setupSignals(self):
         """ Setup signals """
         self.sidePanel.imageFileList.itemSelectionChanged.connect(self.getImageToDisplay)
@@ -342,20 +342,30 @@ class MainWindow(QtGui.QMainWindow):
             arrRegion   = roi.getArrayRegion(imageData,self.vb.img, axes=(0,1))
             avgROIvalue = arrRegion.mean(axis=0).mean(axis=0)
             BMD[:,i]    = avgROIvalue
-        
+
+        # Update the view
+
+        # Show image in Main window
+        #self.vb.enableAutoRange()
+        #if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
+        #self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
+        self.vb.showImage(arrRegion[:,:,0])
+        #self.vb.disableAutoRange()
+
+        # Not needed
         # Calculate the BMD change (percentage of original)
-        tol = 1.0e-06
-        for i in xrange(numROIs):
-            if abs(BMD[0,i])<tol: 
-                BMD[:,i] = 100.
-            else: 
-                BMD[:,i] = BMD[:,i] / BMD[0,i] * 100.
-        self.BMDchange = BMD-100.
-        if self.timeData==None or self.timeData.size!=numImages:
-            self.timeData = np.arange(numImages,dtype=float)
+        # tol = 1.0e-06
+        # for i in xrange(numROIs):
+        #     if abs(BMD[0,i])<tol:
+        #         BMD[:,i] = 100.
+        #     else:
+        #         BMD[:,i] = BMD[:,i] / BMD[0,i] * 100.
+        # self.BMDchange = BMD-100.
+        # if self.timeData==None or self.timeData.size!=numImages:
+        #     self.timeData = np.arange(numImages,dtype=float)
         
         # Plot results  
-        self.showResults()
+        #self.showResults()
         
     def imageAnalysis(self):
         # Generate images of BMD change
