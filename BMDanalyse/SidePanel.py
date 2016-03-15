@@ -36,7 +36,8 @@ class SidePanel(QtGui.QWidget):
         self.vidWidthValue   = QtGui.QLineEdit("256")
         self.vidHeightLabel  = QtGui.QLabel("Height")
         self.vidHeightValue  = QtGui.QLineEdit("256")
-        self.imageFileList = QtGui.QListWidget() 
+        self.imageFileList = QtGui.QListWidget()
+        self.alignButton = QtGui.QPushButton('Do Alignment')
         
         # Image buttons
         self.buttImageAdd  = QtGui.QPushButton(self.icons['imageAddIcon'],"")
@@ -75,10 +76,10 @@ class SidePanel(QtGui.QWidget):
         imageToolboxLayout.addWidget(self.vidWidthValue)
         imageToolboxLayout.addWidget(self.vidHeightLabel)
         imageToolboxLayout.addWidget(self.vidHeightValue)
-
         imageToolboxLayout.addWidget(self.imageFileList)         
         imageToolboxLayout.addWidget(self.imageFileTools)
-    
+        imageToolboxLayout.addWidget(self.alignButton)
+
     def createRoiMenu(self):
         self.roiMenu = popupMenu(self, self.buttRoiAdd)        
 

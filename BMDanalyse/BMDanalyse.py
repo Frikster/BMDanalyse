@@ -36,12 +36,12 @@ class MainWindow(QtGui.QMainWindow):
         self.__version__ = __version__
         
         # Initialise variables
-        self.imageFiles = {}
+        self.videoFiles = {}
         self.timeData   = None
         self.plotWin    = None
         self.imageWin   = None
-        self.BMDchange  = None
-        self.roiNames   = None  
+        #self.BMDchange  = None
+        self.roiNames   = None
         
     def loadIcons(self):
         """ Load icons """
@@ -120,7 +120,7 @@ class MainWindow(QtGui.QMainWindow):
         self.removeImageAct = QtGui.QAction(self.icons['imageRemIcon'], "&Remove current image", self, shortcut="Ctrl+X") 
         self.exitAct        = QtGui.QAction("&Quit", self, shortcut="Ctrl+Q",statusTip="Exit the application")
         fileMenuActions  = [self.loadImageAct,self.removeImageAct,self.exitAct]
-        fileMenuActFuncs = [self.loadImages,self.removeImage,self.close]
+        fileMenuActFuncs = [self.loadVideos, self.removeImage, self.close]
         for i in xrange(len(fileMenuActions)):
             action   = fileMenuActions[i]
             function = fileMenuActFuncs[i]
@@ -178,7 +178,7 @@ class MainWindow(QtGui.QMainWindow):
     def setupSignals(self):
         """ Setup signals """
         self.sidePanel.imageFileList.itemSelectionChanged.connect(self.getImageToDisplay)
-        self.sidePanel.buttImageAdd.clicked.connect(self.loadImages)
+        self.sidePanel.buttImageAdd.clicked.connect(self.loadVideos)
         self.sidePanel.buttImageRem.clicked.connect(self.removeImage)
         self.sidePanel.buttImageUp.clicked.connect(self.sidePanel.moveImageUp)
         self.sidePanel.buttImageDown.clicked.connect(self.sidePanel.moveImageDown) 
@@ -190,6 +190,9 @@ class MainWindow(QtGui.QMainWindow):
         self.sidePanel.buttRoiRem.clicked.connect(self.vb.removeROI)        
         self.sidePanel.buttRoiLoad.clicked.connect(self.vb.loadROI)
         self.sidePanel.buttRoiSave.clicked.connect(self.vb.saveROI)
+
+        self.sidePanel.alignButton.clicked.connect(self.do_alignment)
+
         #self.vb.sigROIchanged.connect(self.updateROItools)
         
     def onAbout(self):
@@ -235,7 +238,7 @@ class MainWindow(QtGui.QMainWindow):
             angle = '%.3f' % angle
             self.sidePanel.updateRoiInfoBox(name,pos,size,angle)  
     
-    def loadImages(self):
+    def loadVideos(self):
         """ Load an image to be analysed """
         newVids = {}
         fileNames = QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
@@ -244,30 +247,22 @@ class MainWindow(QtGui.QMainWindow):
         # returns a type (the first entry being the list of filenames).
         if isinstance(fileNames,types.TupleType): fileNames = fileNames[0]
         if hasattr(QtCore,'QStringList') and isinstance(fileNames, QtCore.QStringList): fileNames = [str(i) for i in fileNames]
-        
+
+        width = int(self.sidePanel.vidWidthValue.text())
+        height = int(self.sidePanel.vidHeightValue.text())
+
         if len(fileNames)>0:
             for fileName in fileNames:
                 if fileName!='':
-                    width = int(self.sidePanel.vidWidthValue.text())
-                    height = int(self.sidePanel.vidHeightValue.text())
-                    frameRef = int(self.sidePanel.frameRefNameValue.text())
-
                     frames = fj.get_frames(str(fileName), width, height)
-                    frame = frames[frameRef]
-
-                    imgarr = frame
-                    #imgarr = np.array(Image.open(str(fileName)))
-                    imgarr = imgarr.swapaxes(0,1)
-                    if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
-                    elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
-                    newVids[fileName] = imgarr
+                    newVids[fileName] = frames
             
             # Add filenames to list widget. Only add new filenames. If filename exists aready, then
             # it will not be added, but data will be updated
             for fileName in sorted(newVids.keys()):
-                if not self.imageFiles.has_key(fileName):
+                if not self.videoFiles.has_key(fileName):
                     self.sidePanel.addImageToList(fileName)
-                self.imageFiles[fileName] = newVids[fileName]
+                self.videoFiles[fileName] = newVids[fileName]
             
             # Show image in Main window
             self.vb.enableAutoRange()
@@ -287,8 +282,8 @@ class MainWindow(QtGui.QMainWindow):
         imageName  = str(image.text())
         
         # Delete key and value from dictionary 
-        if imageName!='': del self.imageFiles[imageName]
-        #self.imageFiles.pop(imageName,None)
+        if imageName!='': del self.videoFiles[imageName]
+        #self.videoFiles.pop(imageName,None)
         
         # Get image item in imageFileList to replace deleted image
         if self.sidePanel.imageFileList.count()==0:
@@ -304,7 +299,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def showImage(self,imageFilename):
         """ Shows image in main view """
-        self.arr = self.imageFiles[imageFilename]
+        frameRef = int(self.sidePanel.frameRefNameValue.text())
+        imgarr = self.videoFiles[imageFilename][frameRef]
+        imgarr = imgarr.swapaxes(0,1)
+        if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
+        elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
+        self.arr = imgarr
         self.vb.showImage(self.arr)
     
     def getImageToDisplay(self):
@@ -314,6 +314,7 @@ class MainWindow(QtGui.QMainWindow):
         else:   self.showImage(imageFilename)  
 
     def getBMD(self):
+        #todo: complete changing this into the cropping function
         """ Get change in BMD over time (e.g. for each image) for all ROIs. 
             
             Revised function that converts the list of images into a 3D array
@@ -322,37 +323,62 @@ class MainWindow(QtGui.QMainWindow):
             setImage to change the image in the view. This requires that all
             images are the same size and in the same position.
         """
-        
-        # Return if there is no image or rois in view
+        # Return if there is nod image or rois in view
         if self.vb.img==None or len(self.vb.rois)==0: return               
         
-        # Collect all images into a 3D array
-        imageFilenames = self.sidePanel.getListOfImages()
-        images    = [self.imageFiles[str(name.text())] for name in imageFilenames]
+        # Collect all frames for each video into its own 3D array
+        videoFilenames = self.sidePanel.getListOfImages()
+        videos    = [self.videoFiles[str(name.text())] for name in videoFilenames]
+
+        videoData = [np.dstack(vid) for vid in videos]
+        numROIs = len(self.vb.rois)
+        arrRegion_masks = []
+        arrRegion_slices = []
+        for image_stack in videoData:
+            for i in xrange(numROIs):
+                roi = self.vb.rois[i]
+                arrRegion_mask   = roi.getROIMask(image_stack,self.vb.img, axes=(0,1))
+                arrRegion_masks = arrRegion_masks.append(arrRegion_mask)
+                arrRegion_slice = roi.getROIMask(image_stack,self.vb.img, axes=(0,1))
+                arrRegion_slices = arrRegion_slices.append(arrRegion_slice)
+
+        # Update the view
+        self.vb.showImage(arrRegion[:,:,0])
+
+
+        # todo: delete it is for debugging
+        images = [i[400] for i in images]
+
+
         imageData = np.dstack(images)
         numImages = len(images)           
         
         # Get BMD across image stack for each ROI
-        numROIs = len(self.vb.rois)
-        BMD     = np.zeros((numImages,numROIs),dtype=float) 
-        self.roiNames = []   
-        for i in xrange(numROIs):
-            roi = self.vb.rois[i]
-            self.roiNames.append(roi.name)
-            arrRegion   = roi.getArrayRegion(imageData,self.vb.img, axes=(0,1))
-            avgROIvalue = arrRegion.mean(axis=0).mean(axis=0)
-            BMD[:,i]    = avgROIvalue
+        #numROIs = len(self.vb.rois)
+        #BMD     = np.zeros((numImages,numROIs),dtype=float)
+        #self.roiNames = []
+        #for i in xrange(numROIs):
+            #roi = self.vb.rois[i]
+            #self.roiNames.append(roi.name)
+            #arrRegion   = roi.getArrayRegion(imageData,self.vb.img, axes=(0,1))
+            #avgROIvalue = arrRegion.mean(axis=0).mean(axis=0)
+            #BMD[:,i]    = avgROIvalue
 
-        # Update the view
+
 
         # Show image in Main window
         #self.vb.enableAutoRange()
         #if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
         #self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
-        self.vb.showImage(arrRegion[:,:,0])
+
+
+        # save
+
+
+
         #self.vb.disableAutoRange()
 
-        # Not needed
+        ### Not needed
         # Calculate the BMD change (percentage of original)
         # tol = 1.0e-06
         # for i in xrange(numROIs):
@@ -408,7 +434,7 @@ class MainWindow(QtGui.QMainWindow):
             self.imageWin.vb  = ImageAnalysisViewBox(lockAspect=True,enableMenu=True)
             self.imageWin.vb.disableAutoRange()
             self.imageWin.glw.addItem(self.imageWin.vb) 
-            arr = self.imageFiles.values()[0]
+            arr = self.videoFiles.values()[0]
             self.imageWin.vb.img1 = pg.ImageItem(arr,autoRange=False,autoLevels=False)
             self.imageWin.vb.addItem(self.imageWin.vb.img1)      
             self.imageWin.vb.img2 = pg.ImageItem(None,autoRange=False,autoLevels=False)
@@ -483,7 +509,7 @@ class MainWindow(QtGui.QMainWindow):
         self.imageWinIndex = 0
         
     def prevImage(self):
-        #numImages = len(self.imageFiles)
+        #numImages = len(self.videoFiles)
         minIndex  = 0
         currIndex = self.imageWinIndex 
         prevIndex = currIndex - 1 
@@ -491,7 +517,7 @@ class MainWindow(QtGui.QMainWindow):
         self.updateImageWin()
         
     def nextImage(self):
-        numImages = len(self.imageFiles)
+        numImages = len(self.videoFiles)
         maxIndex  = numImages - 1
         currIndex = self.imageWinIndex
         nextIndex = currIndex + 1 
@@ -501,7 +527,7 @@ class MainWindow(QtGui.QMainWindow):
     def updateImageWin(self):
         imageFilenames = self.sidePanel.getListOfImages()
         imageName      = imageFilenames[self.imageWinIndex]
-        self.imageWin.vb.img1.setImage(self.imageFiles[str(imageName.text())],autoLevels=False) 
+        self.imageWin.vb.img1.setImage(self.videoFiles[str(imageName.text())], autoLevels=False)
         self.imageWin.vb.img2.setImage(self.imageWin.imagesRGB[self.imageWinIndex],autoLevels=False) 
         self.imageWin.currLabel.setText("%i / %i" % (self.imageWinIndex+1,len(imageFilenames)))
         
@@ -515,7 +541,7 @@ class MainWindow(QtGui.QMainWindow):
         
         # Get image arrays and convert to an array of floats
         imageFilenames = self.sidePanel.getListOfImages()
-        images         = [ self.imageFiles[str(name.text())] for name in imageFilenames ]
+        images         = [self.videoFiles[str(name.text())] for name in imageFilenames]
         imagesConv = []
         for img in images: 
             image = img.copy()
@@ -698,6 +724,181 @@ class MainWindow(QtGui.QMainWindow):
             self.createFigure()
             self.mplw.draw()
             self.plotWin.editBox.close()
+
+#################
+    # def load*Images(self):
+    #     """ Load an image to be analysed """
+    #     newVids = {}
+    #     fileNames = QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
+    #
+    #     # Fix for PySide. PySide doesn't support QStringList types. PyQt4 getOpenFileNames returns a QStringList, whereas PySide
+    #     # returns a type (the first entry being the list of filenames).
+    #     if isinstance(fileNames,types.TupleType): fileNames = fileNames[0]
+    #     if hasattr(QtCore,'QStringList') and isinstance(fileNames, QtCore.QStringList): fileNames = [str(i) for i in fileNames]
+    #
+    #     if len(fileNames)>0:
+    #         for fileName in fileNames:
+    #             if fileName!='':
+    #                 width = int(self.sidePanel.vidWidthValue.text())
+    #                 height = int(self.sidePanel.vidHeightValue.text())
+    #                 frameRef = int(self.sidePanel.frameRefNameValue.text())
+    #
+    #                 frames = fj.get_frames(str(fileName), width, height)
+    #                 frame = frames[frameRef]
+    #
+    #                 imgarr = frame
+    #                 #imgarr = np.array(Image.open(str(fileName)))
+    #                 imgarr = imgarr.swapaxes(0,1)
+    #                 if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
+    #                 elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
+    #                 newVids[fileName] = imgarr
+    #
+    #         # Add filenames to list widget. Only add new filenames. If filename exists aready, then
+    #         # it will not be added, but data will be updated
+    #         for fileName in sorted(newVids.keys()):
+    #             if not self.videoFiles.has_key(fileName):
+    #                 self.sidePanel.addImageToList(fileName)
+    #             self.videoFiles[fileName] = newVids[fileName]
+    #
+    #         # Show image in Main window
+    #         self.vb.enableAutoRange()
+    #         if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
+    #         self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
+    #         self.vb.disableAutoRange()
+##################
+
+    # Custom-made functions
+    def do_alignment(self):
+        fileNames = QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
+
+        # Fix for PySide. PySide doesn't support QStringList types. PyQt4 getOpenFileNames returns a QStringList, whereas PySide
+        # returns a type (the first entry being the list of filenames).
+        if isinstance(fileNames,types.TupleType): fileNames = fileNames[0]
+        if hasattr(QtCore,'QStringList') and isinstance(fileNames, QtCore.QStringList): fileNames = [str(i) for i in fileNames]
+
+        width = int(self.sidePanel.vidWidthValue.text())
+        height = int(self.sidePanel.vidHeightValue.text())
+        frameRef = int(self.sidePanel.frameRefNameValue.text())
+
+        #todo: complete
+
+        ###
+        ##
+        #
+        # if len(fileNames)>0:
+        #     for fileName in fileNames:
+        #         if fileName!='':
+        #             width = int(self.sidePanel.vidWidthValue.text())
+        #             height = int(self.sidePanel.vidHeightValue.text())
+        #             frameRef = int(self.sidePanel.frameRefNameValue.text())
+        #
+        #             frames = fj.get_frames(str(fileName), width, height)
+        #             frame = frames[frameRef]
+        #
+        #             imgarr = frame
+        #             #imgarr = np.array(Image.open(str(fileName)))
+        #             imgarr = imgarr.swapaxes(0,1)
+        #             if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
+        #             elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
+        #             newVids[fileName] = imgarr
+        #
+        #     # Add filenames to list widget. Only add new filenames. If filename exists aready, then
+        #     # it will not be added, but data will be updated
+        #     for fileName in sorted(newVids.keys()):
+        #         if not self.videoFiles.has_key(fileName):
+        #             self.sidePanel.addImageToList(fileName)
+        #         self.videoFiles[fileName] = newVids[fileName]
+        #
+        #     # Show image in Main window
+        #     self.vb.enableAutoRange()
+        #     if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
+        #     self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
+        #     self.vb.disableAutoRange()
+        ###
+        ##
+        #
+
+        if(self.comboBox.currentText()!=None):
+            raw_file_to_align_ind = self.comboBox.currentIndex()
+            frame_ref = self.spinBox_frameRef.value()
+            frame_rate = self.spinBox_FrameRate.value()
+            f_high = self.doubleSpinBox_fHigh.value()
+            f_low = self.doubleSpinBox_fLow.value()
+
+            # First element in aligned_frames_list is all frames aligned to user selected raw
+
+            if len(self.lof) > 1:
+                print("Doing alignments...")
+                #self.aligned_frames_list = []
+                if (self.lp == None):
+                    self.lp=dj.get_distance_var(self.lof,width,height,frame_ref)
+                print('Working on this file: ')+str(self.lof[raw_file_to_align_ind])
+                frames = dj.get_frames(str(self.lof[raw_file_to_align_ind]), width, height)
+                frames = dj.shift_frames(frames, self.lp[raw_file_to_align_ind])
+                # self.aligned_frames_list.append(frames_aligned)
+            else:
+                frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
+
+            avg_frames=fj.calculate_avg(frames)
+            frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
+            frames+=avg_frames
+
+            frames=fj.calculate_df_f0(frames)
+
+            # Todo: incorporate gsr
+            #frames=fj.masked_gsr(frames,width,height)
+
+            self.preprocessed_frames = frames
+
+
+
+            frames.astype('float32').tofile('/home/cornelis/Downloads/dfoverf0_avg_framesIncl.raw')
+
+            #todo: remove tests
+            test1 = [i*3 for i in [71,43]]
+            test2 = [i*3 for i in [63,39]]
+            test3 = [i*3 for i in [59,31]]
+            test4 = [i*3 for i in [38,28]]
+            test5 = [i*3 for i in [33, 41]]
+            test6 = [i*3 for i in [24, 46]]
+            test7 = [i*3 for i in [30, 64]]
+            test8 = [i*3 for i in [71, 60]]
+            test9 = [i*3 for i in [54, 52]]
+            test10 = [i*3 for i in [42, 51]]
+            test11 = [i*3 for i in [44, 31]]
+            test12 = [i*3 for i in [52, 31]]
+
+
+
+            self.compute_spc_map(test1[0],test1[1])
+            #self.compute_spc_map(test2[0],test2[1])
+            #self.compute_spc_map(test3[0],test3[1])
+            #self.compute_spc_map(test4[0],test4[1])
+            #self.compute_spc_map(test5[0],test5[1])
+            #self.compute_spc_map(test6[0],test6[1])
+            #self.compute_spc_map(test7[0],test7[1])
+            #self.compute_spc_map(test8[0],test8[1])
+            #self.compute_spc_map(test9[0],test9[1])
+            #self.compute_spc_map(test10[0],test10[1])
+            #self.compute_spc_map(test11[0],test11[1])
+            #self.compute_spc_map(test12[0],test12[1])
+
+            #self.output_preprocessed_ref_frame()
+
+            # preprocessed_frames_list = []
+            # for f in self.aligned_frames_list:
+            #     avg_frames=fj.calculate_avg(frames)
+            #     frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
+            #     frames+=avg_frames
+            #
+            #     frames=fj.calculate_df_f0(frames)
+            #     preprocessed_frames_list.append(frames)
+            #
+            # preprocessed_frames = preprocessed_frames_list[0]
+        else:
+            print("No align reference")
+
+
 
 
 class MyTableWidget(QtGui.QTableWidget):  

@@ -472,7 +472,7 @@ class PolyLineROIcustom(selectableROI,ROI):
                 h['item'].update()
             
     def getArrayRegion(self, data, img, axes=(0,1), returnMappedCoords=False, **kwds):
-        sl = self.getArraySlice(data, img, axes=(0,1))
+        sl = self.getArraySlice(data, img, axes=(0, 1))
         if sl is None:
             return None
         sliced = data[sl[0]]
@@ -496,6 +496,58 @@ class PolyLineROIcustom(selectableROI,ROI):
         # Return image with mask applied
         reshaped_mask = mask.T[:, :, np.newaxis]
         return sliced * reshaped_mask
+
+    def getROIMask(self, data, img, axes=(0,1), returnMappedCoords=False, **kwds):
+        sl = self.getArraySlice(data, img, axes=(0, 1))
+        if sl is None:
+            return None
+        sliced = data[sl[0]]
+        im = QtGui.QImage(sliced.shape[axes[0]], sliced.shape[axes[1]], QtGui.QImage.Format_ARGB32)
+        im.fill(0x0)
+        p = QtGui.QPainter(im)
+        p.setPen(fn.mkPen(None))
+        p.setBrush(fn.mkBrush('w'))
+        p.setTransform(self.itemTransform(img)[0])
+        bounds = self.mapRectToItem(img, self.boundingRect())
+        p.translate(-bounds.left(), -bounds.top())
+        p.drawPath(self.shape())
+        p.end()
+        mask = imageToArray(im)[:,:,0].astype(float) / 255.
+        # Old code that doesn't seem to do what it should
+        #shape = [1] * data.ndim
+        #shape[axes[0]] = sliced.shape[axes[0]]
+        #shape[axes[1]] = sliced.shape[axes[1]]
+        #return sliced * mask.reshape(shape)
+
+        # Return image with mask applied
+        reshaped_mask = mask.T[:, :, np.newaxis]
+        return reshaped_mask
+
+    def getROISlice(self, data, img, axes=(0,1), returnMappedCoords=False, **kwds):
+        sl = self.getArraySlice(data, img, axes=(0, 1))
+        if sl is None:
+            return None
+        sliced = data[sl[0]]
+        im = QtGui.QImage(sliced.shape[axes[0]], sliced.shape[axes[1]], QtGui.QImage.Format_ARGB32)
+        im.fill(0x0)
+        p = QtGui.QPainter(im)
+        p.setPen(fn.mkPen(None))
+        p.setBrush(fn.mkBrush('w'))
+        p.setTransform(self.itemTransform(img)[0])
+        bounds = self.mapRectToItem(img, self.boundingRect())
+        p.translate(-bounds.left(), -bounds.top())
+        p.drawPath(self.shape())
+        p.end()
+        mask = imageToArray(im)[:,:,0].astype(float) / 255.
+        # Old code that doesn't seem to do what it should
+        #shape = [1] * data.ndim
+        #shape[axes[0]] = sliced.shape[axes[0]]
+        #shape[axes[1]] = sliced.shape[axes[1]]
+        #return sliced * mask.reshape(shape)
+
+        # Return image with mask applied
+        reshaped_mask = mask.T[:, :, np.newaxis]
+        return sliced
 
 def imageToArray(img):
     """

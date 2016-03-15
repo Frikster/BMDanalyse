@@ -7,7 +7,7 @@ import filter_jeff as fj
 import displacement_jeff as dj
 from matplotlib.pylab import *
 from PIL import Image
-from PIL.ImageQt import ISPmageQt
+#from PIL.ImageQt import ISPmageQt
 import qimage2ndarray
 import numpy as np
 
