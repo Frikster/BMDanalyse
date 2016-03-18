@@ -333,25 +333,26 @@ class MainWindow(QtGui.QMainWindow):
         videoData = [np.dstack(vid) for vid in videos]
         numROIs = len(self.vb.rois)
         arrRegion_masks = []
-        arrRegion_slices = []
-        for image_stack in videoData:
-            for i in xrange(numROIs):
-                roi = self.vb.rois[i]
-                arrRegion_mask   = roi.getROIMask(image_stack,self.vb.img, axes=(0,1))
-                arrRegion_masks = arrRegion_masks.append(arrRegion_mask)
-                arrRegion_slice = roi.getROIMask(image_stack,self.vb.img, axes=(0,1))
-                arrRegion_slices = arrRegion_slices.append(arrRegion_slice)
+        for i in xrange(numROIs):
+            roi = self.vb.rois[i]
+            arrRegion_mask   = roi.getROIMask(videoData[0],self.vb.img, axes=(0,1))
+            arrRegion_masks.append(arrRegion_mask)
 
-        # Update the view
-        self.vb.showImage(arrRegion[:,:,0])
+        combined_mask = np.sum(arrRegion_masks,axis=0)
+        # This outputs what you want!
+        plt.imshow((videoData[0]*combined_mask[:,:,np.newaxis])[:,:,400])
+        (videoData[0]*combined_mask[:,:,np.newaxis]).tofile("/home/cornelis/Downloads/test.raw")
+
+        #reshaped_mask = combined_mask.T[:, :, np.newaxis]
+        #videoData[0]*reshaped_mask
+
+        # Save cropped video to downloads
+        #self.vb.showImage(arrRegion[:,:,0])
 
 
-        # todo: delete it is for debugging
-        images = [i[400] for i in images]
 
 
-        imageData = np.dstack(images)
-        numImages = len(images)           
+
         
         # Get BMD across image stack for each ROI
         #numROIs = len(self.vb.rois)
