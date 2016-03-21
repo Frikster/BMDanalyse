@@ -341,7 +341,13 @@ class MainWindow(QtGui.QMainWindow):
         combined_mask = np.sum(arrRegion_masks,axis=0)
         # This outputs what you want!
         plt.imshow((videoData[0]*combined_mask[:,:,np.newaxis])[:,:,400])
-        (videoData[0]*combined_mask[:,:,np.newaxis]).tofile("/home/cornelis/Downloads/test.raw")
+       # (videoData[0]*combined_mask[:,:,np.newaxis]).tofile("/home/cornelis/Downloads/test.raw")
+
+        # This outputs what you want.
+        # In imageJ - Gap Between Images The number of bytes from the end of one image to the beginning of the next.
+        # Set this value to width × height × bytes-per-pixel × n to skip n images for each image read. So use 4194304
+        # Dont forget to set Endian value and set to 64 bit
+        np.swapaxes(np.swapaxes(videoData[0]*combined_mask[:,:,np.newaxis],1,2),0,1).tofile("/home/cornelis/Downloads/test.raw")
 
         #reshaped_mask = combined_mask.T[:, :, np.newaxis]
         #videoData[0]*reshaped_mask
@@ -349,11 +355,6 @@ class MainWindow(QtGui.QMainWindow):
         # Save cropped video to downloads
         #self.vb.showImage(arrRegion[:,:,0])
 
-
-
-
-
-        
         # Get BMD across image stack for each ROI
         #numROIs = len(self.vb.rois)
         #BMD     = np.zeros((numImages,numROIs),dtype=float)
@@ -366,7 +367,6 @@ class MainWindow(QtGui.QMainWindow):
             #BMD[:,i]    = avgROIvalue
 
 
-
         # Show image in Main window
         #self.vb.enableAutoRange()
         #if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
@@ -374,8 +374,6 @@ class MainWindow(QtGui.QMainWindow):
 
 
         # save
-
-
 
         #self.vb.disableAutoRange()
 
