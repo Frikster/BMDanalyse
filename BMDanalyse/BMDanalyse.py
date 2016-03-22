@@ -42,6 +42,8 @@ class MainWindow(QtGui.QMainWindow):
         self.imageWin   = None
         #self.BMDchange  = None
         self.roiNames   = None
+        # lp contains a map of distances between alignments
+        self.lp = None
         
     def loadIcons(self):
         """ Load icons """
@@ -768,135 +770,108 @@ class MainWindow(QtGui.QMainWindow):
 
     # Custom-made functions
     def do_alignment(self):
-        fileNames = QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
+        reference_for_align = str(self.sidePanel.imageFileList.currentItem().text())
+        if reference_for_align=='':
+            return
+
+        # Get Filenames
+        fileNames = range(0,self.sidePanel.imageFileList.__len__())
+        for i in range(0,self.sidePanel.imageFileList.__len__()):
+            fileNames[i] = str(self.sidePanel.imageFileList.item(i).text())
+
+         #   QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
 
         # Fix for PySide. PySide doesn't support QStringList types. PyQt4 getOpenFileNames returns a QStringList, whereas PySide
         # returns a type (the first entry being the list of filenames).
         if isinstance(fileNames,types.TupleType): fileNames = fileNames[0]
         if hasattr(QtCore,'QStringList') and isinstance(fileNames, QtCore.QStringList): fileNames = [str(i) for i in fileNames]
 
+        # Collect all user-defined variables (and variables immediately inferred from user-selections)
         width = int(self.sidePanel.vidWidthValue.text())
         height = int(self.sidePanel.vidHeightValue.text())
-        frameRef = int(self.sidePanel.frameRefNameValue.text())
+        frame_ref = int(self.sidePanel.frameRefNameValue.text())
+        frame_rate = int(self.sidePanel.frameRateValue.text())
+        f_high = float(self.sidePanel.f_highValue.text())
+        f_low = float(self.sidePanel.f_lowValue.text())
+        raw_file_to_align_ind = int(self.sidePanel.imageFileList.currentIndex().row())
 
-        #todo: complete
+        # Get a dictionary of all videos
+        newVids = {}
+        if len(fileNames)>0:
+            for fileName in fileNames:
+                if fileName!='':
+                    frames = fj.get_frames(str(fileName), width, height)
+                    frame = frames[frame_ref]
 
-        ###
-        ##
+                    imgarr = frame
+                    #imgarr = np.array(Image.open(str(fileName)))
+                    imgarr = imgarr.swapaxes(0,1)
+                    if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
+                    elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
+                    newVids[str(fileName)] = imgarr
+
+        # Do alignments
+        print("Doing alignments...")
+        if (self.lp == None):
+            self.lp=dj.get_distance_var(fileNames,width,height,frame_ref)
+        print('Working on this file: ')+reference_for_align
+        frames = dj.get_frames(reference_for_align, width, height) # This might work better if you have weird error: frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
+        frames = dj.shift_frames(frames, self.lp[raw_file_to_align_ind])
+
+        # Compute df/d0 and save to file
+        avg_frames=fj.calculate_avg(frames)
+        frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
+        frames+=avg_frames
+        frames=fj.calculate_df_f0(frames)
+        frames.astype('float32').tofile('/home/cornelis/Downloads/dfoverf0_avg_framesIncl.raw')
+
+        # Todo: incorporate gsr
+        #frames=fj.masked_gsr(frames,width,height)
+
+        self.preprocessed_frames = frames
+
+
+        #todo: remove tests
+        # test1 = [i*3 for i in [71,43]]
+        # test2 = [i*3 for i in [63,39]]
+        # test3 = [i*3 for i in [59,31]]
+        # test4 = [i*3 for i in [38,28]]
+        # test5 = [i*3 for i in [33, 41]]
+        # test6 = [i*3 for i in [24, 46]]
+        # test7 = [i*3 for i in [30, 64]]
+        # test8 = [i*3 for i in [71, 60]]
+        # test9 = [i*3 for i in [54, 52]]
+        # test10 = [i*3 for i in [42, 51]]
+        # test11 = [i*3 for i in [44, 31]]
+        # test12 = [i*3 for i in [52, 31]]
         #
-        # if len(fileNames)>0:
-        #     for fileName in fileNames:
-        #         if fileName!='':
-        #             width = int(self.sidePanel.vidWidthValue.text())
-        #             height = int(self.sidePanel.vidHeightValue.text())
-        #             frameRef = int(self.sidePanel.frameRefNameValue.text())
         #
-        #             frames = fj.get_frames(str(fileName), width, height)
-        #             frame = frames[frameRef]
         #
-        #             imgarr = frame
-        #             #imgarr = np.array(Image.open(str(fileName)))
-        #             imgarr = imgarr.swapaxes(0,1)
-        #             if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
-        #             elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
-        #             newVids[fileName] = imgarr
+        # self.compute_spc_map(test1[0],test1[1])
+        #self.compute_spc_map(test2[0],test2[1])
+        #self.compute_spc_map(test3[0],test3[1])
+        #self.compute_spc_map(test4[0],test4[1])
+        #self.compute_spc_map(test5[0],test5[1])
+        #self.compute_spc_map(test6[0],test6[1])
+        #self.compute_spc_map(test7[0],test7[1])
+        #self.compute_spc_map(test8[0],test8[1])
+        #self.compute_spc_map(test9[0],test9[1])
+        #self.compute_spc_map(test10[0],test10[1])
+        #self.compute_spc_map(test11[0],test11[1])
+        #self.compute_spc_map(test12[0],test12[1])
+
+        #self.output_preprocessed_ref_frame()
+
+        # preprocessed_frames_list = []
+        # for f in self.aligned_frames_list:
+        #     avg_frames=fj.calculate_avg(frames)
+        #     frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
+        #     frames+=avg_frames
         #
-        #     # Add filenames to list widget. Only add new filenames. If filename exists aready, then
-        #     # it will not be added, but data will be updated
-        #     for fileName in sorted(newVids.keys()):
-        #         if not self.videoFiles.has_key(fileName):
-        #             self.sidePanel.addImageToList(fileName)
-        #         self.videoFiles[fileName] = newVids[fileName]
+        #     frames=fj.calculate_df_f0(frames)
+        #     preprocessed_frames_list.append(frames)
         #
-        #     # Show image in Main window
-        #     self.vb.enableAutoRange()
-        #     if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
-        #     self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
-        #     self.vb.disableAutoRange()
-        ###
-        ##
-        #
-
-        if(self.comboBox.currentText()!=None):
-            raw_file_to_align_ind = self.comboBox.currentIndex()
-            frame_ref = self.spinBox_frameRef.value()
-            frame_rate = self.spinBox_FrameRate.value()
-            f_high = self.doubleSpinBox_fHigh.value()
-            f_low = self.doubleSpinBox_fLow.value()
-
-            # First element in aligned_frames_list is all frames aligned to user selected raw
-
-            if len(self.lof) > 1:
-                print("Doing alignments...")
-                #self.aligned_frames_list = []
-                if (self.lp == None):
-                    self.lp=dj.get_distance_var(self.lof,width,height,frame_ref)
-                print('Working on this file: ')+str(self.lof[raw_file_to_align_ind])
-                frames = dj.get_frames(str(self.lof[raw_file_to_align_ind]), width, height)
-                frames = dj.shift_frames(frames, self.lp[raw_file_to_align_ind])
-                # self.aligned_frames_list.append(frames_aligned)
-            else:
-                frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
-
-            avg_frames=fj.calculate_avg(frames)
-            frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
-            frames+=avg_frames
-
-            frames=fj.calculate_df_f0(frames)
-
-            # Todo: incorporate gsr
-            #frames=fj.masked_gsr(frames,width,height)
-
-            self.preprocessed_frames = frames
-
-
-
-            frames.astype('float32').tofile('/home/cornelis/Downloads/dfoverf0_avg_framesIncl.raw')
-
-            #todo: remove tests
-            test1 = [i*3 for i in [71,43]]
-            test2 = [i*3 for i in [63,39]]
-            test3 = [i*3 for i in [59,31]]
-            test4 = [i*3 for i in [38,28]]
-            test5 = [i*3 for i in [33, 41]]
-            test6 = [i*3 for i in [24, 46]]
-            test7 = [i*3 for i in [30, 64]]
-            test8 = [i*3 for i in [71, 60]]
-            test9 = [i*3 for i in [54, 52]]
-            test10 = [i*3 for i in [42, 51]]
-            test11 = [i*3 for i in [44, 31]]
-            test12 = [i*3 for i in [52, 31]]
-
-
-
-            self.compute_spc_map(test1[0],test1[1])
-            #self.compute_spc_map(test2[0],test2[1])
-            #self.compute_spc_map(test3[0],test3[1])
-            #self.compute_spc_map(test4[0],test4[1])
-            #self.compute_spc_map(test5[0],test5[1])
-            #self.compute_spc_map(test6[0],test6[1])
-            #self.compute_spc_map(test7[0],test7[1])
-            #self.compute_spc_map(test8[0],test8[1])
-            #self.compute_spc_map(test9[0],test9[1])
-            #self.compute_spc_map(test10[0],test10[1])
-            #self.compute_spc_map(test11[0],test11[1])
-            #self.compute_spc_map(test12[0],test12[1])
-
-            #self.output_preprocessed_ref_frame()
-
-            # preprocessed_frames_list = []
-            # for f in self.aligned_frames_list:
-            #     avg_frames=fj.calculate_avg(frames)
-            #     frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
-            #     frames+=avg_frames
-            #
-            #     frames=fj.calculate_df_f0(frames)
-            #     preprocessed_frames_list.append(frames)
-            #
-            # preprocessed_frames = preprocessed_frames_list[0]
-        else:
-            print("No align reference")
-
+        # preprocessed_frames = preprocessed_frames_list[0]
 
 
 
