@@ -13,6 +13,9 @@ import matplotlib
 import pickle
 import pyqtgraph.functions as fn
 import types
+import matplotlib.pyplot as plt
+import SPCExplorer.filter_jeff as fj
+import SPCExplorer.displacement_jeff as dj
 
 __all__=['ImageAnalysisViewBox','ViewMode','MultiRoiViewBox']
 
@@ -65,6 +68,7 @@ class ViewMode():
 class MultiRoiViewBox(pg.ViewBox):
 
     sigROIchanged = QtCore.Signal(object)
+    clicked = QtCore.pyqtSignal(int, int)
 
     def __init__(self,parent=None,border=None,lockAspect=False,enableMouse=True,invertY=False,enableMenu=True,name=None):
         pg.ViewBox.__init__(self,parent,border,lockAspect,enableMouse,invertY,enableMenu,name)
@@ -79,7 +83,12 @@ class MultiRoiViewBox(pg.ViewBox):
         self.viewMode = self.NORMAL
         self.drawROImode = False
         self.drawingROI  = None
-        
+        self.vLine = pg.InfiniteLine(angle=90, movable=False)
+        self.hLine = pg.InfiniteLine(angle=0, movable=False)
+
+        self.mouseclickeventCount = 0
+
+
     def getContextMenus(self,ev):
         return None
         
@@ -92,15 +101,47 @@ class MultiRoiViewBox(pg.ViewBox):
     def export(self):
         self.exp = ImageExporterCustom(self)
         self.exp.export()
-        
+
     def mouseClickEvent(self, ev):
         if self.drawROImode:
             ev.accept()
             self.drawPolygonRoi(ev)            
         elif ev.button() == QtCore.Qt.RightButton and self.menuEnabled():
             ev.accept()
-            self.raiseContextMenu(ev) 
-            
+            self.raiseContextMenu(ev)
+        elif ev.button() == QtCore.Qt.LeftButton:
+            ev.accept()
+            pos = self.mapToItem(self.img, ev.pos())
+            self.clicked.emit(pos.x(), pos.y())
+        #self.mouseclickeventCount = self.mouseclickeventCount + 1
+
+        # if self.mouseclickeventCount <= 1:
+        #     proxy = pg.SignalProxy(self.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
+        #     self.scene().sigMouseMoved.connect(self.mouseMoved)
+
+    #Todo: get this working so that mouse vLine and hLine display
+    def mouseMoved(self, ev):
+        pos = ev ## using signal proxy turns original arguments into a tuple (or not...)
+
+        try:
+            if self.sceneBoundingRect().contains(pos) and not self.drawROImode:
+               print("All good")
+               print(pos)
+               try:
+                print("mapToItem")
+                print(self.mapToItem(self.img,pos))
+               except:
+                   print("Didn't work")
+        except:
+            print("Now what?")
+        if self.sceneBoundingRect().contains(pos) and not self.drawROImode:
+            mousePoint = self.mapSceneToView(pos)
+            index = int(mousePoint.x())
+            #if index > 0 and index < len(data1):
+            #    label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>,   <span style='color: green'>y2=%0.1f</span>" % (mousePoint.x(), data1[index], data2[index]))
+            self.vLine.setPos(mousePoint.x())
+            self.hLine.setPos(mousePoint.y())
+
     def addPolyRoiRequest(self):
         """Function to add a Polygon ROI"""
         self.drawROImode = True
@@ -428,14 +469,25 @@ class MultiRoiViewBox(pg.ViewBox):
         self.background.setBrush(fn.mkBrush(self.viewMode.lut[0]))
         self.background.show()  
         if    self.img==None: return
-        else: self.img.setLookupTable(self.viewMode.lut)            
+        # todo: validate safe removal of line
+        #else: self.img.setLookupTable(self.viewMode.lut)
        
     def showImage(self,arr):
         if arr==None: 
             self.img = None
             return
-        if self.img==None: 
+        if self.img==None:
             self.img = pg.ImageItem(arr,autoRange=False,autoLevels=False)
-            self.addItem(self.img)      
+            self.addItem(self.img)
+        # Add/readd crosshair
+        self.addItem(self.vLine, ignoreBounds=True)
+        self.addItem(self.hLine, ignoreBounds=True)
+        proxy = pg.SignalProxy(self.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
+        self.scene().sigMouseMoved.connect(self.mouseMoved)
         self.img.setImage(arr,autoLevels=False)
-        self.updateView()  
+        self.updateView()
+
+
+
+
+

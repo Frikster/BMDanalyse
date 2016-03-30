@@ -44,6 +44,7 @@ class MainWindow(QtGui.QMainWindow):
         self.roiNames   = None
         # lp contains a map of distances between alignments
         self.lp = None
+        self.preprocessed_frames = None
         
     def loadIcons(self):
         """ Load icons """
@@ -75,12 +76,14 @@ class MainWindow(QtGui.QMainWindow):
         leftFrameLayout.setContentsMargins(0,0,5,0)
 
         # Left frame contents     
-        self.viewMain = GraphicsLayoutWidget()  # A GraphicsLayout within a GraphicsView 
+        self.viewMain = GraphicsLayoutWidget()  # A GraphicsLayout within a GraphicsView
         leftFrameLayout.addWidget(self.viewMain)
         self.viewMain.setMinimumSize(200,200)
         self.vb = MultiRoiViewBox(lockAspect=True,enableMenu=True)
         self.viewMain.addItem(self.vb)
-        self.vb.disableAutoRange()
+        # todo: uncomment as need be
+        #self.vb.disableAutoRange()
+        self.vb.enableAutoRange()
     
         # Right frame
         self.sidePanel = SidePanel(self) 
@@ -115,8 +118,7 @@ class MainWindow(QtGui.QMainWindow):
         self.analyseMenu = menubar.addMenu('&Analyse')
         self.aboutMenu   = menubar.addMenu('A&bout')
         
-    def createActions(self):    
-   
+    def createActions(self):
         # Actions for File menu
         self.loadImageAct   = QtGui.QAction(self.icons['imageAddIcon'], "&Load image(s)",        self, shortcut="Ctrl+L")
         self.removeImageAct = QtGui.QAction(self.icons['imageRemIcon'], "&Remove current image", self, shortcut="Ctrl+X") 
@@ -194,9 +196,15 @@ class MainWindow(QtGui.QMainWindow):
         self.sidePanel.buttRoiSave.clicked.connect(self.vb.saveROI)
 
         self.sidePanel.alignButton.clicked.connect(self.do_alignment)
-
+        self.vb.clicked.connect(self.on_vbc_clicked)
+        #self.vb.mouseClickEvent.connect(self.compute_spc_map)
         #self.vb.sigROIchanged.connect(self.updateROItools)
-        
+
+
+    @QtCore.pyqtSlot(int, int)
+    def on_vbc_clicked(self, x, y):
+        self.compute_spc_map(x, y)
+
     def onAbout(self):
         """ About BMDanalyse message"""
         author  ='Michael Hogg'
@@ -271,7 +279,8 @@ class MainWindow(QtGui.QMainWindow):
             if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
             self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
             self.vb.disableAutoRange()            
-            
+
+
     def removeImage(self):
         """ Remove image from sidePanel imageFileList """
         
@@ -303,11 +312,14 @@ class MainWindow(QtGui.QMainWindow):
         """ Shows image in main view """
         frameRef = int(self.sidePanel.frameRefNameValue.text())
         imgarr = self.videoFiles[imageFilename][frameRef]
+        self.preprocess_for_showImage(imgarr)
+        self.vb.showImage(self.arr)
+
+    def preprocess_for_showImage(self, imgarr):
         imgarr = imgarr.swapaxes(0,1)
         if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
         elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
         self.arr = imgarr
-        self.vb.showImage(self.arr)
     
     def getImageToDisplay(self):
         """ Get current item in file list and display in main view"""
@@ -416,98 +428,98 @@ class MainWindow(QtGui.QMainWindow):
         lut = np.array(lut)*255
         self.lut = np.array(lut,dtype=np.ubyte)
      
-    def createImageWin(self):
-    
-        self.buttMinimumSize = QtCore.QSize(70,36)
-        self.iconSize = QtCore.QSize(24,24)
-        
-        if self.imageWin==None:
-            
-            self.imageWin = QtGui.QDialog(self, QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowTitleHint |  \
-                                          QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
-            self.imageWin.setWindowTitle('BMDanalyse')
-            self.imageWin.setWindowIcon(self.icons['BMDanalyseIcon'])
-            self.imageWin.setMinimumSize(250,500)
-            self.imageWin.resize(self.imageWin.minimumSize()) 
-            
-            # Create viewBox  
-            self.imageWin.glw = GraphicsLayoutWidget()  # A GraphicsLayout within a GraphicsView 
-            self.imageWin.vb  = ImageAnalysisViewBox(lockAspect=True,enableMenu=True)
-            self.imageWin.vb.disableAutoRange()
-            self.imageWin.glw.addItem(self.imageWin.vb) 
-            arr = self.videoFiles.values()[0]
-            self.imageWin.vb.img1 = pg.ImageItem(arr,autoRange=False,autoLevels=False)
-            self.imageWin.vb.addItem(self.imageWin.vb.img1)      
-            self.imageWin.vb.img2 = pg.ImageItem(None,autoRange=False,autoLevels=False)
-            self.imageWin.vb.addItem(self.imageWin.vb.img2)
-            self.imageWin.vb.autoRange()
-            lut = [ [ int(255*val) for val in matplotlib.cm.gray(i)[:3] ] for i in xrange(256) ]
-            lut = np.array(lut,dtype=np.ubyte)         
-            self.imageWin.vb.img1.setLookupTable(lut)
-            
-            # Label to show index of current image label
-            self.imageCurrCont = QtGui.QFrame()
-            self.imageCurrCont.setLineWidth(2)
-            self.imageCurrCont.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Raised)
-            self.imageCurrCont.setMinimumWidth(70)
-            self.imageWin.currLabel = QtGui.QLabel("")
-            self.imageWin.currLabel.setAlignment(QtCore.Qt.AlignHCenter)            
-            imageCurrContLayout = QtGui.QHBoxLayout()
-            imageCurrContLayout.addWidget(self.imageWin.currLabel)
-            self.imageCurrCont.setLayout(imageCurrContLayout)  
-            
-            # Create buttons to select images
-            self.imageWin.buttCont = QtGui.QWidget()
-            self.imageWin.buttPrev = QtGui.QPushButton(self.icons['imagePrevIcon'],"")
-            self.imageWin.buttNext = QtGui.QPushButton(self.icons['imageNextIcon'],"")
-            self.buttLayout = QtGui.QHBoxLayout()
-            self.buttLayout.addStretch(1)
-            self.buttLayout.addWidget(self.imageWin.buttPrev)
-            self.buttLayout.addWidget(self.imageCurrCont)
-            self.buttLayout.addWidget(self.imageWin.buttNext)
-            self.buttLayout.addStretch(1)
-            self.imageWin.buttCont.setLayout(self.buttLayout)
-            self.imageWin.buttPrev.setMinimumSize(self.buttMinimumSize)
-            self.imageWin.buttNext.setMinimumSize(self.buttMinimumSize)
-            self.imageWin.buttPrev.setIconSize(self.iconSize) 
-            self.imageWin.buttNext.setIconSize(self.iconSize)
-            self.buttLayout.setContentsMargins(0,5,0,5)
-            
-            self.imageWin.buttPrev.clicked.connect(self.prevImage)
-            self.imageWin.buttNext.clicked.connect(self.nextImage)
-            
-            # Create slider    
-            self.imageWin.sliderCon = QtGui.QWidget()
-            self.imageWin.slider = QtGui.QSlider(self)
-            self.imageWin.slider.setOrientation(QtCore.Qt.Horizontal)
-            self.imageWin.slider.setMinimum(1)
-            self.imageWin.slider.setMaximum(100)
-            self.imageWin.slider.setMinimumWidth(100)
-            self.imageWin.slider.valueChanged.connect(self.sliderValueChanged)
-            self.imageWin.sliderLabel = QtGui.QLabel('1')
-            self.imageWin.sliderLabel.setMinimumWidth(120)
-            self.sliderLayout = QtGui.QHBoxLayout()
-            self.sliderLayout.addStretch(1)
-            self.sliderLayout.addWidget(self.imageWin.sliderLabel)
-            self.sliderLayout.addWidget(self.imageWin.slider)
-            self.sliderLayout.addStretch(1)
-            self.imageWin.sliderCon.setLayout(self.sliderLayout)
-            self.sliderLayout.setContentsMargins(0,0,0,5)
-            
-            # Format image window
-            self.imageWinLayout = QtGui.QVBoxLayout()
-            self.imageWinLayout.addWidget(self.imageWin.glw)
-            self.imageWinLayout.addWidget(self.imageWin.buttCont)
-            self.imageWinLayout.addWidget(self.imageWin.sliderCon)
-            self.imageWin.setLayout(self.imageWinLayout)
-            
-            self.imageWin.imagesRGB = None
-            
-        # Show
-        self.imageWin.show()
-        self.imageWin.slider.setValue(10)
-        self.sliderValueChanged(10)
-        self.imageWinIndex = 0
+    # def createImageWin(self):
+    #
+    #     self.buttMinimumSize = QtCore.QSize(70,36)
+    #     self.iconSize = QtCore.QSize(24,24)
+    #
+    #     if self.imageWin==None:
+    #
+    #         self.imageWin = QtGui.QDialog(self, QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowTitleHint |  \
+    #                                       QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
+    #         self.imageWin.setWindowTitle('BMDanalyse')
+    #         self.imageWin.setWindowIcon(self.icons['BMDanalyseIcon'])
+    #         self.imageWin.setMinimumSize(250,500)
+    #         self.imageWin.resize(self.imageWin.minimumSize())
+    #
+    #         # Create viewBox
+    #         self.imageWin.glw = GraphicsLayoutWidget()  # A GraphicsLayout within a GraphicsView
+    #         self.imageWin.vb  = ImageAnalysisViewBox(lockAspect=True,enableMenu=True)
+    #         self.imageWin.vb.disableAutoRange()
+    #         self.imageWin.glw.addItem(self.imageWin.vb)
+    #         arr = self.videoFiles.values()[0]
+    #         self.imageWin.vb.img1 = pg.ImageItem(arr,autoRange=False,autoLevels=False)
+    #         self.imageWin.vb.addItem(self.imageWin.vb.img1)
+    #         self.imageWin.vb.img2 = pg.ImageItem(None,autoRange=False,autoLevels=False)
+    #         self.imageWin.vb.addItem(self.imageWin.vb.img2)
+    #         self.imageWin.vb.autoRange()
+    #         lut = [ [ int(255*val) for val in matplotlib.cm.gray(i)[:3] ] for i in xrange(256) ]
+    #         lut = np.array(lut,dtype=np.ubyte)
+    #         self.imageWin.vb.img1.setLookupTable(lut)
+    #
+    #         # Label to show index of current image label
+    #         self.imageCurrCont = QtGui.QFrame()
+    #         self.imageCurrCont.setLineWidth(2)
+    #         self.imageCurrCont.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Raised)
+    #         self.imageCurrCont.setMinimumWidth(70)
+    #         self.imageWin.currLabel = QtGui.QLabel("")
+    #         self.imageWin.currLabel.setAlignment(QtCore.Qt.AlignHCenter)
+    #         imageCurrContLayout = QtGui.QHBoxLayout()
+    #         imageCurrContLayout.addWidget(self.imageWin.currLabel)
+    #         self.imageCurrCont.setLayout(imageCurrContLayout)
+    #
+    #         # Create buttons to select images
+    #         self.imageWin.buttCont = QtGui.QWidget()
+    #         self.imageWin.buttPrev = QtGui.QPushButton(self.icons['imagePrevIcon'],"")
+    #         self.imageWin.buttNext = QtGui.QPushButton(self.icons['imageNextIcon'],"")
+    #         self.buttLayout = QtGui.QHBoxLayout()
+    #         self.buttLayout.addStretch(1)
+    #         self.buttLayout.addWidget(self.imageWin.buttPrev)
+    #         self.buttLayout.addWidget(self.imageCurrCont)
+    #         self.buttLayout.addWidget(self.imageWin.buttNext)
+    #         self.buttLayout.addStretch(1)
+    #         self.imageWin.buttCont.setLayout(self.buttLayout)
+    #         self.imageWin.buttPrev.setMinimumSize(self.buttMinimumSize)
+    #         self.imageWin.buttNext.setMinimumSize(self.buttMinimumSize)
+    #         self.imageWin.buttPrev.setIconSize(self.iconSize)
+    #         self.imageWin.buttNext.setIconSize(self.iconSize)
+    #         self.buttLayout.setContentsMargins(0,5,0,5)
+    #
+    #         self.imageWin.buttPrev.clicked.connect(self.prevImage)
+    #         self.imageWin.buttNext.clicked.connect(self.nextImage)
+    #
+    #         # Create slider
+    #         self.imageWin.sliderCon = QtGui.QWidget()
+    #         self.imageWin.slider = QtGui.QSlider(self)
+    #         self.imageWin.slider.setOrientation(QtCore.Qt.Horizontal)
+    #         self.imageWin.slider.setMinimum(1)
+    #         self.imageWin.slider.setMaximum(100)
+    #         self.imageWin.slider.setMinimumWidth(100)
+    #         self.imageWin.slider.valueChanged.connect(self.sliderValueChanged)
+    #         self.imageWin.sliderLabel = QtGui.QLabel('1')
+    #         self.imageWin.sliderLabel.setMinimumWidth(120)
+    #         self.sliderLayout = QtGui.QHBoxLayout()
+    #         self.sliderLayout.addStretch(1)
+    #         self.sliderLayout.addWidget(self.imageWin.sliderLabel)
+    #         self.sliderLayout.addWidget(self.imageWin.slider)
+    #         self.sliderLayout.addStretch(1)
+    #         self.imageWin.sliderCon.setLayout(self.sliderLayout)
+    #         self.sliderLayout.setContentsMargins(0,0,0,5)
+    #
+    #         # Format image window
+    #         self.imageWinLayout = QtGui.QVBoxLayout()
+    #         self.imageWinLayout.addWidget(self.imageWin.glw)
+    #         self.imageWinLayout.addWidget(self.imageWin.buttCont)
+    #         self.imageWinLayout.addWidget(self.imageWin.sliderCon)
+    #         self.imageWin.setLayout(self.imageWinLayout)
+    #
+    #         self.imageWin.imagesRGB = None
+    #
+    #     # Show
+    #     self.imageWin.show()
+    #     self.imageWin.slider.setValue(10)
+    #     self.sliderValueChanged(10)
+    #     self.imageWinIndex = 0
         
     def prevImage(self):
         #numImages = len(self.videoFiles)
@@ -825,40 +837,42 @@ class MainWindow(QtGui.QMainWindow):
         frames=fj.calculate_df_f0(frames)
         frames.astype('float32').tofile('/home/cornelis/Downloads/dfoverf0_avg_framesIncl.raw')
 
-        # Todo: incorporate gsr
+        # Todo: incorporate gsr (needs mask filename)
         #frames=fj.masked_gsr(frames,width,height)
 
         self.preprocessed_frames = frames
 
+        # todo: add to list of files to view?
 
+        self.count = 0
         #todo: remove tests
-        # test1 = [i*3 for i in [71,43]]
-        # test2 = [i*3 for i in [63,39]]
-        # test3 = [i*3 for i in [59,31]]
-        # test4 = [i*3 for i in [38,28]]
-        # test5 = [i*3 for i in [33, 41]]
-        # test6 = [i*3 for i in [24, 46]]
-        # test7 = [i*3 for i in [30, 64]]
-        # test8 = [i*3 for i in [71, 60]]
-        # test9 = [i*3 for i in [54, 52]]
-        # test10 = [i*3 for i in [42, 51]]
-        # test11 = [i*3 for i in [44, 31]]
-        # test12 = [i*3 for i in [52, 31]]
-        #
-        #
-        #
+        test1 = [i*3 for i in [71,43]]
+        test2 = [i*3 for i in [63,39]]
+        test3 = [i*3 for i in [59,31]]
+        test4 = [i*3 for i in [38,28]]
+        test5 = [i*3 for i in [33, 41]]
+        test6 = [i*3 for i in [24, 46]]
+        test7 = [i*3 for i in [30, 64]]
+        test8 = [i*3 for i in [71, 60]]
+        test9 = [i*3 for i in [54, 52]]
+        test10 = [i*3 for i in [42, 51]]
+        test11 = [i*3 for i in [44, 31]]
+        test12 = [i*3 for i in [52, 31]]
+
+
+
         # self.compute_spc_map(test1[0],test1[1])
-        #self.compute_spc_map(test2[0],test2[1])
-        #self.compute_spc_map(test3[0],test3[1])
-        #self.compute_spc_map(test4[0],test4[1])
-        #self.compute_spc_map(test5[0],test5[1])
-        #self.compute_spc_map(test6[0],test6[1])
-        #self.compute_spc_map(test7[0],test7[1])
-        #self.compute_spc_map(test8[0],test8[1])
-        #self.compute_spc_map(test9[0],test9[1])
-        #self.compute_spc_map(test10[0],test10[1])
-        #self.compute_spc_map(test11[0],test11[1])
-        #self.compute_spc_map(test12[0],test12[1])
+        # self.compute_spc_map(test2[0],test2[1])
+        # self.compute_spc_map(test3[0],test3[1])
+        # self.compute_spc_map(test4[0],test4[1])
+        # self.compute_spc_map(test5[0],test5[1])
+        # self.compute_spc_map(test6[0],test6[1])
+        # self.compute_spc_map(test7[0],test7[1])
+        # self.compute_spc_map(test8[0],test8[1])
+        # self.compute_spc_map(test9[0],test9[1])
+        # self.compute_spc_map(test10[0],test10[1])
+        # self.compute_spc_map(test11[0],test11[1])
+        # self.compute_spc_map(test12[0],test12[1])
 
         #self.output_preprocessed_ref_frame()
 
@@ -874,6 +888,35 @@ class MainWindow(QtGui.QMainWindow):
         # preprocessed_frames = preprocessed_frames_list[0]
 
 
+    def compute_spc_map(self, x, y):
+        if not self.preprocessed_frames == None:
+            #todo: make this work with a mouse click
+            #CorrelationMapDisplayer = fj.CorrelationMapDisplayer(self.preprocessed_frames)
+            self.image = fj.get_correlation_map(y, x, self.preprocessed_frames)
+            # Make the location of the seed - self.image[y,x] - blatantly obvious
+            self.image[y+1,x+1]=1.0
+            self.image[y+1,x]=1.0
+            self.image[y,x+1]=1.0
+            self.image[y-1,x-1]=1.0
+            self.image[y-1,x]=1.0
+            self.image[y,x-1]=1.0
+            self.image[y+1,x-1]=1.0
+            self.image[y-1,x+1]=1.0
+            print("Here")
+
+            # todo: transorm self.image into rgb
+            norm = plt.Normalize()
+            self.image = plt.cm.jet((self.image))*255
+
+            #self.preprocess_for_showImage(self.image)
+            self.vb.showImage(self.image)
+
+            #self.count = self.count + 1
+            #tit = "/home/cornelis/Downloads/spcTest"+str(self.count)+'.png'
+            #plt.imshow(self.image)
+            #plt.savefig(tit,self.image)
+            #self.image.astype('float32').tofile('/home/cornelis/Downloads/spcTest.raw')
+            #self.output_spc()
 
 class MyTableWidget(QtGui.QTableWidget):  
     def __init__(self, x, y, parent = None):
