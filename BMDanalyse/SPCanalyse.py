@@ -350,8 +350,9 @@ class MainWindow(QtGui.QMainWindow):
             setImage to change the image in the view. This requires that all
             images are the same size and in the same position.
         """
-        # Return if there is nod image or rois in view and frames have been preprocessed
+        # Return if there is nod image or rois in view
         if self.vb.img==None or len(self.vb.rois)==0:
+            print("there is nod image or rois in view ")
             return
         
         # Collect all frames for each video into its own 3D array
@@ -363,7 +364,6 @@ class MainWindow(QtGui.QMainWindow):
         # Todo: rethink design. Is aligned_frames needed?
         #frames_swap = np.swapaxes(np.swapaxes(self.aligned_frames,0,1),1,2)
         frames_swap = np.swapaxes(np.swapaxes(self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())],0,1),1,2)
-
         # Collect ROI's and combine
         numROIs = len(self.vb.rois)
         arrRegion_masks = []
@@ -376,10 +376,11 @@ class MainWindow(QtGui.QMainWindow):
         # Make all rows with all zeros na
         combined_mask[(combined_mask==0)]=None
         self.mask = combined_mask
-        print(config.__file__)
-        print(os.path.basename(config.__file__))
-        print(os.path.dirname(config.__file__))
+        #print(config.__file__)
+        #print(os.path.basename(config.__file__))
+        #print(os.path.dirname(config.__file__))
         combined_mask.astype('uint8').tofile(os.path.expanduser('~/Downloads/')+"mask2.raw")
+        print("mask saved to " + os.path.expanduser('~/Downloads/')+"mask2.raw")
 
         # This outputs what you want!
         #plt.imshow((videoData[0]*combined_mask[:,:,np.newaxis])[:,:,400])
@@ -392,6 +393,8 @@ class MainWindow(QtGui.QMainWindow):
         #todo: clean up your dirty long code.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] turns up everywhere
         self.roi_frames = (self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] * combined_mask[np.newaxis, :, :])
         self.roi_frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"ROI.raw")
+        print("ROI saved to " + os.path.expanduser('~/Downloads/')+"ROI.raw")
+
 
         #np.swapaxes(np.swapaxes(videoData[0]*combined_mask[:,:,np.newaxis],1,2),0,1).tofile("/home/cornelis/Downloads/test.raw")
 
@@ -886,6 +889,7 @@ class MainWindow(QtGui.QMainWindow):
         frames+=avg_frames
         frames=fj.calculate_df_f0(frames)
         frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
+        print("temporal filter saved to"+os.path.expanduser(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw"))
         self.filtered_frames = frames
 
         #todo: make gsr a choice
@@ -938,7 +942,8 @@ class MainWindow(QtGui.QMainWindow):
             #plt.savefig(tit,self.image)
             #self.image.astype('float32').tofile('/home/cornelis/Downloads/spcTest.raw')
             #self.output_spc()
-
+        else:
+            print("You still need to apply a temporal filter")
 class MyTableWidget(QtGui.QTableWidget):  
     def __init__(self, x, y, parent = None):
         super(MyTableWidget, self).__init__(x, y, parent)
