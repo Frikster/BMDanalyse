@@ -5,7 +5,7 @@
 # This file is part of BMDanalyse - See LICENSE.txt for information on usage and redistribution
 
 import os, sys, matplotlib, matplotlib.pyplot
-
+from os.path import expanduser
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
@@ -376,7 +376,10 @@ class MainWindow(QtGui.QMainWindow):
         # Make all rows with all zeros na
         combined_mask[(combined_mask==0)]=None
         self.mask = combined_mask
-        combined_mask.astype('uint8').tofile("/home/cornelis/Downloads/mask.raw")
+        print(config.__file__)
+        print(os.path.basename(config.__file__))
+        print(os.path.dirname(config.__file__))
+        combined_mask.astype('uint8').tofile(os.path.expanduser('~/Downloads/')+"mask2.raw")
 
         # This outputs what you want!
         #plt.imshow((videoData[0]*combined_mask[:,:,np.newaxis])[:,:,400])
@@ -388,7 +391,7 @@ class MainWindow(QtGui.QMainWindow):
         # Dont forget to set Endian value and set to 64 bit
         #todo: clean up your dirty long code.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] turns up everywhere
         self.roi_frames = (self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] * combined_mask[np.newaxis, :, :])
-        self.roi_frames.astype('float32').tofile("/home/cornelis/Downloads/ROI.raw")
+        self.roi_frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"ROI.raw")
 
         #np.swapaxes(np.swapaxes(videoData[0]*combined_mask[:,:,np.newaxis],1,2),0,1).tofile("/home/cornelis/Downloads/test.raw")
 
@@ -861,7 +864,7 @@ class MainWindow(QtGui.QMainWindow):
         frames = dj.shift_frames(frames, self.lp[raw_file_to_align_ind])
 
         self.aligned_frames = frames
-        frames.astype('float32').tofile('/home/cornelis/Downloads/aligned.raw')
+        frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"aligned.raw")
 
     def temporal_filter(self):
         # Collect all user-defined variables (and variables immediately inferred from user-selections)
@@ -882,7 +885,7 @@ class MainWindow(QtGui.QMainWindow):
         frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
         frames+=avg_frames
         frames=fj.calculate_df_f0(frames)
-        frames.astype('float32').tofile('/home/cornelis/Downloads/dfoverf0_avg_framesIncl.raw')
+        frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
         self.filtered_frames = frames
 
         #todo: make gsr a choice
@@ -901,7 +904,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Todo: incorporate gsr (needs mask filename)
         frames=fj.gsr(frames,width,height)
-        frames.astype('float32').tofile('/home/cornelis/Downloads/gsr.raw')
+        frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"gsr.raw")
         self.gsr_frames = frames
 
 
