@@ -156,6 +156,9 @@ def save_to_file(dir, filename, frames, dtype):
 
 
 def gsr(frames,width,height):
+
+    frames[isnan(frames)] = 0
+
     # Reshape into time and space
     frames = np.reshape(frames, (frames.shape[0], width*height))
     mean_g = np.mean(frames, axis=1)
