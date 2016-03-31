@@ -37,7 +37,8 @@ class SidePanel(QtGui.QWidget):
         self.vidHeightLabel  = QtGui.QLabel("Height")
         self.vidHeightValue  = QtGui.QLineEdit("256")
         self.imageFileList = QtGui.QListWidget()
-        self.alignButton = QtGui.QPushButton('Do Alignment')
+        self.alignButton = QtGui.QPushButton('Alignment')
+        self.temporalFilterButton = QtGui.QPushButton('Temporal filter')
         
         # Image buttons
         self.buttImageAdd  = QtGui.QPushButton(self.icons['imageAddIcon'],"")
@@ -79,6 +80,7 @@ class SidePanel(QtGui.QWidget):
         imageToolboxLayout.addWidget(self.imageFileList)         
         imageToolboxLayout.addWidget(self.imageFileTools)
         imageToolboxLayout.addWidget(self.alignButton)
+        imageToolboxLayout.addWidget(self.temporalFilterButton)
 
     def createRoiMenu(self):
         self.roiMenu = popupMenu(self, self.buttRoiAdd)        
@@ -125,16 +127,16 @@ class SidePanel(QtGui.QWidget):
         self.roiInfoBox  = QtGui.QWidget()
         roiInfoBoxLayout = QtGui.QGridLayout()
         self.roiInfoBox.setLayout(roiInfoBoxLayout)
-        self.roiNameLabel  = QtGui.QLabel("delete")
-        self.roiNameValue  = QtGui.QLineEdit("")
+        self.gsrNameLabel  = QtGui.QLabel("gsr")
+        self.gsrNameValue  = QtGui.QLineEdit("y")
         self.frameRateLabel   = QtGui.QLabel("Frame Rate (Hz)")
         self.frameRateValue   = QtGui.QLineEdit("30")
         self.f_lowLabel  = QtGui.QLabel("f_low")
         self.f_lowValue  = QtGui.QLineEdit("0.3")
         self.f_highLabel = QtGui.QLabel("f_high")
         self.f_highValue = QtGui.QLineEdit("3")
-        roiInfoBoxLayout.addWidget(self.roiNameLabel,  0, 0)
-        roiInfoBoxLayout.addWidget(self.roiNameValue,  0, 1)
+        roiInfoBoxLayout.addWidget(self.gsrNameLabel, 0, 0)
+        roiInfoBoxLayout.addWidget(self.gsrNameValue, 0, 1)
         roiInfoBoxLayout.addWidget(self.frameRateLabel, 1, 0)
         roiInfoBoxLayout.addWidget(self.frameRateValue, 1, 1)
         roiInfoBoxLayout.addWidget(self.f_lowLabel, 2, 0)
@@ -203,7 +205,7 @@ class SidePanel(QtGui.QWidget):
         
     # def updateRoiInfoBox(self,name="",pos="",size="",angle=""):
     #     print("Obsolete function")
-    #     self.roiNameValue.setText(name)
+    #     self.gsrNameValue.setText(name)
     #     self.frameRateValue.setText(pos)
     #     self.f_lowValue.setText(size)
     #     self.f_highValue.setText(angle)

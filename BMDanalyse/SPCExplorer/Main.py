@@ -131,7 +131,7 @@ class QMainWindow(TemplateBaseClass):
             #     frames=fj.calculate_df_f0(frames)
             #     preprocessed_frames_list.append(frames)
             #
-            # preprocessed_frames = preprocessed_frames_list[0]
+            # filtered_frames = preprocessed_frames_list[0]
         else:
             print("No align reference")
 
@@ -211,7 +211,7 @@ class QMainWindow(TemplateBaseClass):
         #self.graphicsView.mouseDoubleClickEvent(QMouseEvent)
 
     def compute_spc_map(self, x, y):
-        #CorrelationMapDisplayer = fj.CorrelationMapDisplayer(self.preprocessed_frames)
+        #CorrelationMapDisplayer = fj.CorrelationMapDisplayer(self.filtered_frames)
         self.image = fj.get_correlation_map(y, x, self.preprocessed_frames)
 
         self.output_spc()

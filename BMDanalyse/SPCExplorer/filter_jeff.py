@@ -30,7 +30,7 @@ from numpy import *
 
 starting_frame = 100
 
-def get_frames(rgb_file,width,height):
+def get_frames(rgb_file,width,height,dat_type):
 
     if(rgb_file.endswith(".tif")):
         ########
@@ -87,29 +87,26 @@ def get_frames(rgb_file,width,height):
         # imarray = np.array(im)
         return imarray
 
-    # Todo: Find out whether the *3 is... for anything specifically used by Jeff?
     frame_size = width * height * 3
     #frame_size = width * height
     with open(rgb_file, "rb") as file:
-        frames = np.fromfile(file, dtype=np.uint8)
+        frames = np.fromfile(file, dtype=dat_type)
         total_number_of_frames = int(np.size(frames)/frame_size)
         print(total_number_of_frames)
         frames = np.reshape(frames, (total_number_of_frames, width, height, 3))
-
         frames = frames[starting_frame:, :, :, 1]
         frames = np.asarray(frames, dtype=np.float32)
         total_number_of_frames = frames.shape[0]
 
     return frames
 
-def get_green_frames(g_file,width,height):
+def get_green_frames(g_file,width,height,dat_type):
     with open(g_file, "rb") as file:
-        frames = np.fromfile(file, dtype=np.uint8)
+        frames = np.fromfile(file, dtype=dat_type)
         total_number_of_frames = int(np.size(frames)/(width*height))
         print(total_number_of_frames)
         frames = np.reshape(frames, (total_number_of_frames, width, height))
-        frames = np.asarray(frames, dtype=np.uint8)
-        total_number_of_frames = frames.shape[0]
+        frames = np.asarray(frames, dtype=np.float32)
     return frames
 
 def get_processed_frames(rgb_file,width,height):
@@ -180,12 +177,12 @@ def gsr(frames,width,height):
     return frames
 
 def masked_gsr(frames, mask_filename,width,height):
-    mask = 0
     with open(mask_filename, "rb") as file:
         mask = np.fromfile(file, dtype=np.uint8)
 
-    mask = np.asarray(mask, dtype=np.float32)
 
+    mask = np.asarray(mask, dtype=np.float32)
+    mask[isnan(mask)] = 0
     print(mask.shape)
     indices = np.squeeze((mask > 0).nonzero())
     print(np.shape(indices))

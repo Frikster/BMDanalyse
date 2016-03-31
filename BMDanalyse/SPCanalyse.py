@@ -44,7 +44,11 @@ class MainWindow(QtGui.QMainWindow):
         self.roiNames   = None
         # lp contains a map of distances between alignments
         self.lp = None
-        self.preprocessed_frames = None
+        self.filtered_frames = None
+        self.aligned_frames = None
+        self.roi_frames = None
+        self.gsr_frames = None
+        self.mask = None
         
     def loadIcons(self):
         """ Load icons """
@@ -169,7 +173,7 @@ class MainWindow(QtGui.QMainWindow):
             self.roiMenu.addAction(action)
              
         # Actions for Analyse menu
-        self.roiAnalysisAct = QtGui.QAction("&ROI analysis", self.viewMain, shortcut="Ctrl+R",triggered=self.getBMD)
+        self.roiAnalysisAct = QtGui.QAction("&ROI analysis", self.viewMain, shortcut="Ctrl+R", triggered=self.crop_ROI)
         self.imgAnalysisAct = QtGui.QAction("&Image analysis", self.viewMain, shortcut="Ctrl+I",triggered=self.imageAnalysis)
         self.analyseMenu.addAction(self.roiAnalysisAct) 
         self.analyseMenu.addAction(self.imgAnalysisAct)
@@ -196,6 +200,7 @@ class MainWindow(QtGui.QMainWindow):
         self.sidePanel.buttRoiSave.clicked.connect(self.vb.saveROI)
 
         self.sidePanel.alignButton.clicked.connect(self.do_alignment)
+        self.sidePanel.temporalFilterButton.clicked.connect(self.temporal_filter)
         self.vb.clicked.connect(self.on_vbc_clicked)
         #self.vb.mouseClickEvent.connect(self.compute_spc_map)
         #self.vb.sigROIchanged.connect(self.updateROItools)
@@ -203,6 +208,7 @@ class MainWindow(QtGui.QMainWindow):
 
     @QtCore.pyqtSlot(int, int)
     def on_vbc_clicked(self, x, y):
+        y = int(self.sidePanel.vidHeightValue.text())-y
         self.compute_spc_map(x, y)
 
     def onAbout(self):
@@ -261,10 +267,17 @@ class MainWindow(QtGui.QMainWindow):
         width = int(self.sidePanel.vidWidthValue.text())
         height = int(self.sidePanel.vidHeightValue.text())
 
+        # todo: Make it so that User can specify input file data type
         if len(fileNames)>0:
             for fileName in fileNames:
                 if fileName!='':
-                    frames = fj.get_frames(str(fileName), width, height)
+                    try:
+                        try:
+                            frames = fj.get_frames(str(fileName), width, height, np.uint8)
+                        except:
+                            frames = fj.get_frames(str(fileName), width, height, np.float32)
+                    except:
+                        frames = fj.get_green_frames(str(fileName), width, height, np.float32)
                     newVids[fileName] = frames
             
             # Add filenames to list widget. Only add new filenames. If filename exists aready, then
@@ -327,7 +340,7 @@ class MainWindow(QtGui.QMainWindow):
         except: pass
         else:   self.showImage(imageFilename)  
 
-    def getBMD(self):
+    def crop_ROI(self):
         #todo: complete changing this into the cropping function
         """ Get change in BMD over time (e.g. for each image) for all ROIs. 
             
@@ -337,31 +350,47 @@ class MainWindow(QtGui.QMainWindow):
             setImage to change the image in the view. This requires that all
             images are the same size and in the same position.
         """
-        # Return if there is nod image or rois in view
-        if self.vb.img==None or len(self.vb.rois)==0: return               
+        # Return if there is nod image or rois in view and frames have been preprocessed
+        if self.vb.img==None or len(self.vb.rois)==0:
+            return
         
         # Collect all frames for each video into its own 3D array
-        videoFilenames = self.sidePanel.getListOfImages()
-        videos    = [self.videoFiles[str(name.text())] for name in videoFilenames]
+        #videoFilenames = self.sidePanel.getListOfImages()
+        #videos    = [self.videoFiles[str(name.text())] for name in videoFilenames]
+        #videoData = [np.dstack(vid) for vid in videos]
 
-        videoData = [np.dstack(vid) for vid in videos]
+        # swap axis for aligned_frames
+        # Todo: rethink design. Is aligned_frames needed?
+        #frames_swap = np.swapaxes(np.swapaxes(self.aligned_frames,0,1),1,2)
+        frames_swap = np.swapaxes(np.swapaxes(self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())],0,1),1,2)
+
+        # Collect ROI's and combine
         numROIs = len(self.vb.rois)
         arrRegion_masks = []
         for i in xrange(numROIs):
             roi = self.vb.rois[i]
-            arrRegion_mask   = roi.getROIMask(videoData[0],self.vb.img, axes=(0,1))
+            arrRegion_mask   = roi.getROIMask(frames_swap, self.vb.img, axes=(0, 1))
             arrRegion_masks.append(arrRegion_mask)
 
         combined_mask = np.sum(arrRegion_masks,axis=0)
+        # Make all rows with all zeros na
+        combined_mask[(combined_mask==0)]=None
+        self.mask = combined_mask
+        combined_mask.astype('uint8').tofile("/home/cornelis/Downloads/mask.raw")
+
         # This outputs what you want!
-        plt.imshow((videoData[0]*combined_mask[:,:,np.newaxis])[:,:,400])
+        #plt.imshow((videoData[0]*combined_mask[:,:,np.newaxis])[:,:,400])
        # (videoData[0]*combined_mask[:,:,np.newaxis]).tofile("/home/cornelis/Downloads/test.raw")
 
         # This outputs what you want.
         # In imageJ - Gap Between Images The number of bytes from the end of one image to the beginning of the next.
         # Set this value to width × height × bytes-per-pixel × n to skip n images for each image read. So use 4194304
         # Dont forget to set Endian value and set to 64 bit
-        np.swapaxes(np.swapaxes(videoData[0]*combined_mask[:,:,np.newaxis],1,2),0,1).tofile("/home/cornelis/Downloads/test.raw")
+        #todo: clean up your dirty long code.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] turns up everywhere
+        self.roi_frames = (self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] * combined_mask[np.newaxis, :, :])
+        self.roi_frames.astype('float32').tofile("/home/cornelis/Downloads/ROI.raw")
+
+        #np.swapaxes(np.swapaxes(videoData[0]*combined_mask[:,:,np.newaxis],1,2),0,1).tofile("/home/cornelis/Downloads/test.raw")
 
         #reshaped_mask = combined_mask.T[:, :, np.newaxis]
         #videoData[0]*reshaped_mask
@@ -385,7 +414,6 @@ class MainWindow(QtGui.QMainWindow):
         #self.vb.enableAutoRange()
         #if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
         #self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
-
 
         # save
 
@@ -812,7 +840,7 @@ class MainWindow(QtGui.QMainWindow):
         if len(fileNames)>0:
             for fileName in fileNames:
                 if fileName!='':
-                    frames = fj.get_frames(str(fileName), width, height)
+                    frames = self.videoFiles[fileName]
                     frame = frames[frame_ref]
 
                     imgarr = frame
@@ -826,9 +854,28 @@ class MainWindow(QtGui.QMainWindow):
         print("Doing alignments...")
         if (self.lp == None):
             self.lp=dj.get_distance_var(fileNames,width,height,frame_ref)
-        print('Working on this file: ')+reference_for_align
-        frames = dj.get_frames(reference_for_align, width, height) # This might work better if you have weird error: frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
+        print('Working on this file: '+reference_for_align)
+
+        frames = self.videoFiles[reference_for_align]
+        #frames = dj.get_frames(reference_for_align, width, height) # This might work better if you have weird error: frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
         frames = dj.shift_frames(frames, self.lp[raw_file_to_align_ind])
+
+        self.aligned_frames = frames
+        frames.astype('float32').tofile('/home/cornelis/Downloads/aligned.raw')
+
+    def temporal_filter(self):
+        # Collect all user-defined variables (and variables immediately inferred from user-selections)
+        width = int(self.sidePanel.vidWidthValue.text())
+        height = int(self.sidePanel.vidHeightValue.text())
+        frame_ref = int(self.sidePanel.frameRefNameValue.text())
+        frame_rate = int(self.sidePanel.frameRateValue.text())
+        f_high = float(self.sidePanel.f_highValue.text())
+        f_low = float(self.sidePanel.f_lowValue.text())
+        raw_file_to_align_ind = int(self.sidePanel.imageFileList.currentIndex().row())
+
+        # todo: Rethink design... do I need roi_frames?
+        frames = self.roi_frames
+        frames = self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())]
 
         # Compute df/d0 and save to file
         avg_frames=fj.calculate_avg(frames)
@@ -836,63 +883,35 @@ class MainWindow(QtGui.QMainWindow):
         frames+=avg_frames
         frames=fj.calculate_df_f0(frames)
         frames.astype('float32').tofile('/home/cornelis/Downloads/dfoverf0_avg_framesIncl.raw')
+        self.filtered_frames = frames
+
+        #todo: make gsr a choice
+        self.gsr(self.roi_frames)
+
+
+    def gsr(self,frames):
+        # Collect all user-defined variables (and variables immediately inferred from user-selections)
+        width = int(self.sidePanel.vidWidthValue.text())
+        height = int(self.sidePanel.vidHeightValue.text())
+        frame_ref = int(self.sidePanel.frameRefNameValue.text())
+        frame_rate = int(self.sidePanel.frameRateValue.text())
+        f_high = float(self.sidePanel.f_highValue.text())
+        f_low = float(self.sidePanel.f_lowValue.text())
+        raw_file_to_align_ind = int(self.sidePanel.imageFileList.currentIndex().row())
 
         # Todo: incorporate gsr (needs mask filename)
-        #frames=fj.masked_gsr(frames,width,height)
-
-        self.preprocessed_frames = frames
-
-        # todo: add to list of files to view?
-
-        self.count = 0
-        #todo: remove tests
-        test1 = [i*3 for i in [71,43]]
-        test2 = [i*3 for i in [63,39]]
-        test3 = [i*3 for i in [59,31]]
-        test4 = [i*3 for i in [38,28]]
-        test5 = [i*3 for i in [33, 41]]
-        test6 = [i*3 for i in [24, 46]]
-        test7 = [i*3 for i in [30, 64]]
-        test8 = [i*3 for i in [71, 60]]
-        test9 = [i*3 for i in [54, 52]]
-        test10 = [i*3 for i in [42, 51]]
-        test11 = [i*3 for i in [44, 31]]
-        test12 = [i*3 for i in [52, 31]]
-
-
-
-        # self.compute_spc_map(test1[0],test1[1])
-        # self.compute_spc_map(test2[0],test2[1])
-        # self.compute_spc_map(test3[0],test3[1])
-        # self.compute_spc_map(test4[0],test4[1])
-        # self.compute_spc_map(test5[0],test5[1])
-        # self.compute_spc_map(test6[0],test6[1])
-        # self.compute_spc_map(test7[0],test7[1])
-        # self.compute_spc_map(test8[0],test8[1])
-        # self.compute_spc_map(test9[0],test9[1])
-        # self.compute_spc_map(test10[0],test10[1])
-        # self.compute_spc_map(test11[0],test11[1])
-        # self.compute_spc_map(test12[0],test12[1])
-
-        #self.output_preprocessed_ref_frame()
-
-        # preprocessed_frames_list = []
-        # for f in self.aligned_frames_list:
-        #     avg_frames=fj.calculate_avg(frames)
-        #     frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
-        #     frames+=avg_frames
-        #
-        #     frames=fj.calculate_df_f0(frames)
-        #     preprocessed_frames_list.append(frames)
-        #
-        # preprocessed_frames = preprocessed_frames_list[0]
+        frames=fj.gsr(frames,width,height)
+        frames.astype('float32').tofile('/home/cornelis/Downloads/gsr.raw')
+        self.gsr_frames = frames
 
 
     def compute_spc_map(self, x, y):
-        if not self.preprocessed_frames == None:
-            #todo: make this work with a mouse click
-            #CorrelationMapDisplayer = fj.CorrelationMapDisplayer(self.preprocessed_frames)
-            self.image = fj.get_correlation_map(y, x, self.preprocessed_frames)
+        if not self.filtered_frames == None:
+            if not self.gsr_frames == None and str(self.sidePanel.gsrNameValue.text()) == 'y':
+                self.image = fj.get_correlation_map(y, x, self.gsr_frames)
+            else:
+            #CorrelationMapDisplayer = fj.CorrelationMapDisplayer(self.filtered_frames)
+                 self.image = fj.get_correlation_map(y, x, self.filtered_frames)
             # Make the location of the seed - self.image[y,x] - blatantly obvious
             self.image[y+1,x+1]=1.0
             self.image[y+1,x]=1.0
@@ -902,14 +921,13 @@ class MainWindow(QtGui.QMainWindow):
             self.image[y,x-1]=1.0
             self.image[y+1,x-1]=1.0
             self.image[y-1,x+1]=1.0
-            print("Here")
 
-            # todo: transorm self.image into rgb
+            # transorm self.image into rgb
             norm = plt.Normalize()
             self.image = plt.cm.jet((self.image))*255
 
-            #self.preprocess_for_showImage(self.image)
-            self.vb.showImage(self.image)
+            self.preprocess_for_showImage(self.image)
+            self.vb.showImage(self.arr)
 
             #self.count = self.count + 1
             #tit = "/home/cornelis/Downloads/spcTest"+str(self.count)+'.png'

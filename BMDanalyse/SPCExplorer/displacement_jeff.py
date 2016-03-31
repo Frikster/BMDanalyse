@@ -120,7 +120,11 @@ def get_distance_var(lof,width,height,frame_oi):
     for f in lof:
         print('loop')
         print(f)
-        frames=get_green_frames(f,width,height)
+        # todo: This is an example of shit duct tape coding
+        try:
+            frames=get_green_frames(f,width,height,np.uint8)
+        except:
+            frames=get_green_frames(f,width,height,np.float32)
         print((type(frames)))
         filtered_frames.append(filter2_test_j(frames[frame_oi,:,:]))
 

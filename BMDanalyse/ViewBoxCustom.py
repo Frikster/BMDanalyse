@@ -113,8 +113,6 @@ class MultiRoiViewBox(pg.ViewBox):
             ev.accept()
             pos = self.mapToItem(self.img, ev.pos())
             self.clicked.emit(pos.x(), pos.y())
-        #self.mouseclickeventCount = self.mouseclickeventCount + 1
-
         # if self.mouseclickeventCount <= 1:
         #     proxy = pg.SignalProxy(self.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
         #     self.scene().sigMouseMoved.connect(self.mouseMoved)
@@ -123,17 +121,12 @@ class MultiRoiViewBox(pg.ViewBox):
     def mouseMoved(self, ev):
         pos = ev ## using signal proxy turns original arguments into a tuple (or not...)
 
-        try:
-            if self.sceneBoundingRect().contains(pos) and not self.drawROImode:
-               print("All good")
-               print(pos)
-               try:
-                print("mapToItem")
-                print(self.mapToItem(self.img,pos))
-               except:
-                   print("Didn't work")
-        except:
-            print("Now what?")
+        # try:
+        #     if self.sceneBoundingRect().contains(pos) and not self.drawROImode:
+        #        #print(pos)
+        #        #print(self.mapToItem(self.img,pos))
+        # except:
+        #     print("Now what?")
         if self.sceneBoundingRect().contains(pos) and not self.drawROImode:
             mousePoint = self.mapSceneToView(pos)
             index = int(mousePoint.x())
