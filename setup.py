@@ -58,9 +58,21 @@ How to use
 """,
 
     install_requires = [
+        'pyinstaller'
+        'future'
+        'astropy',
+        'image_registration',
+        'scipy',
+        'FITS_tools',
+        'pywcs',
+        'pyfits',
+        'pytest',
+        'parmap',
+        'setuptools',
         'pyqtgraph',        
         'matplotlib',
         'numpy',
         'PIL',
+		'SPCExplorer',
         ],
 )
