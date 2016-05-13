@@ -4,6 +4,9 @@
 
 # This file is part of BMDanalyse - See LICENSE.txt for information on usage and redistribution
 
+#Needed for Pyinstaller
+import FileDialog
+
 import os, sys, matplotlib, matplotlib.pyplot
 from os.path import expanduser
 
