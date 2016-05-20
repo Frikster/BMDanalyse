@@ -5,7 +5,7 @@ from scipy.stats.stats import pearsonr
 from scipy import ndimage
 #from joblib import Parallel, delayed
 #import multiprocessing
-import parmap
+#import parmap
 import image_registration
 from PIL import Image
 from numpy import *
@@ -299,7 +299,8 @@ class CorrelationMapDisplayer:
         #for i in range(frames.shape[-1]):
         #    correlation_map.append(pearsonr(frames[:, i], seed_pixel)[0])
         # Todo: NaN's generated via this line. Why?
-        correlation_map = parmap.map(corr, frames.T, seed_pixel)
+        #correlation_map = parmap.map(corr, frames.T, seed_pixel)
+        correlation_map = map(corr, frames.T, seed_pixel)
         correlation_map = np.asarray(correlation_map, dtype=np.float32)
         correlation_map = np.reshape(correlation_map, (width, height))
         print(np.shape(correlation_map))
@@ -338,7 +339,8 @@ def get_correlation_map(seed_x, seed_y, frames):
     #for i in range(frames.shape[-1]):
     #    correlation_map.append(pearsonr(frames[:, i], seed_pixel)[0])
     # Todo: NaN's generated via this line. Why?
-    correlation_map = parmap.map(corr, frames.T, seed_pixel)
+    #correlation_map = parmap.map(corr, frames.T, seed_pixel)
+    correlation_map = map(corr, frames.T, seed_pixel)
     correlation_map = np.asarray(correlation_map, dtype=np.float32)
     correlation_map = np.reshape(correlation_map, (width, height))
     print(np.shape(correlation_map))

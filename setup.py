@@ -73,6 +73,5 @@ How to use
         'matplotlib',
         'numpy',
         'PIL',
-		'SPCExplorer',
         ],
 )

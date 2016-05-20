@@ -17,6 +17,7 @@ import numpy as np
 from pyqtgraph.widgets.MatplotlibWidget import MatplotlibWidget
 import matplotlib.pyplot as plt
 from PIL import Image
+import multiprocessing
 import types
 import SPCExplorer.filter_jeff as fj
 import SPCExplorer.displacement_jeff as dj
@@ -1007,6 +1008,7 @@ def run():
     app.exec_()
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     app = QtGui.QApplication(sys.argv)
     window = MainWindow()
     window.show()
