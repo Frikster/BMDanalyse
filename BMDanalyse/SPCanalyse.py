@@ -32,8 +32,8 @@ absDirPath = os.path.dirname(__file__)
 class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, parent=None):
-    
         QtGui.QMainWindow.__init__(self, parent) 
+
         self.loadIcons()   
         self.setupUserInterface() 
         self.setupSignals()    
@@ -109,8 +109,7 @@ class MainWindow(QtGui.QMainWindow):
         # Application window
         self.setWindowTitle('BMDanalyse')
         self.setWindowIcon(self.icons['BMDanalyseIcon'])
-        self.setMinimumSize(600,500)
-        self.resize(self.minimumSize())
+        self.resize(1000, 500)
        
         # Window menus       
         self.createMenus()     
