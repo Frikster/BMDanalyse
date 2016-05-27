@@ -30,7 +30,7 @@ from numpy import *
 
 starting_frame = 100
 
-def get_frames(rgb_file,width,height,dat_type):
+def get_frames(rgb_file, width, height, dat_type):
 
     if(rgb_file.endswith(".tif")):
         ########
@@ -94,17 +94,52 @@ def get_frames(rgb_file,width,height,dat_type):
         total_number_of_frames = int(np.size(frames)/frame_size)
         print(total_number_of_frames)
         frames = np.reshape(frames, (total_number_of_frames, width, height, 3))
-        frames = frames[starting_frame:, :, :, 1]
+        # frames = frames[starting_frame:, :, :, 1]
+        frames = frames[:, :, :, 1]
         frames = np.asarray(frames, dtype=np.float32)
         total_number_of_frames = frames.shape[0]
 
     return frames
 
 def get_green_frames(g_file,width,height,dat_type):
+    if(g_file.endswith(".tif")):
+        ########
+        # Cat method
+        img = Image.open(g_file)
+
+        counter=0
+        # if True:
+        #     while True:
+        #         try:
+        #             img.seek(counter)
+        #         except EOFError:
+        #             break
+        #         counter+=1
+        #         print counter
+
+        #Default pic sizes
+        n_pixels = 128
+
+        # Initialize 3D image array
+        n_frames = counter
+        n_frames = 20000
+
+        images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype = np.float64)
+
+        print("n_frames: "+ n_frames)
+        for i in range(0, n_frames,1):
+            img.seek(i)
+            #print "Loading frame: ", i
+            #images_raw [i] = np.flipud(np.fliplr(np.float16(img))) #FLIP IMAGES FOR Experiments Nov and Dec 2015
+            images_raw [i] = np.float64(img) #2016-1-11 2016-1-14 experiment no flipping needed
+        imarray = images_raw
+
+        return imarray
+
     with open(g_file, "rb") as file:
         frames = np.fromfile(file, dtype=dat_type)
         total_number_of_frames = int(np.size(frames)/(width*height))
-        print(total_number_of_frames)
+        print("n_frames: "+str(total_number_of_frames))
         frames = np.reshape(frames, (total_number_of_frames, width, height))
         frames = np.asarray(frames, dtype=np.float32)
     return frames

@@ -38,6 +38,7 @@ class SidePanel(QtGui.QWidget):
         self.vidHeightValue  = QtGui.QLineEdit("256")
         self.imageFileList = QtGui.QListWidget()
         self.alignButton = QtGui.QPushButton('Alignment')
+        self.concatButton = QtGui.QPushButton('Concatenate All')
         self.temporalFilterButton = QtGui.QPushButton('Temporal filter')
         
         # Image buttons
@@ -80,6 +81,7 @@ class SidePanel(QtGui.QWidget):
         imageToolboxLayout.addWidget(self.imageFileList)         
         imageToolboxLayout.addWidget(self.imageFileTools)
         imageToolboxLayout.addWidget(self.alignButton)
+        imageToolboxLayout.addWidget(self.concatButton)
         imageToolboxLayout.addWidget(self.temporalFilterButton)
 
     def createRoiMenu(self):

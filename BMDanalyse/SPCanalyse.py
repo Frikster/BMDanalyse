@@ -8,6 +8,7 @@
 import FileDialog
 
 import os, sys, matplotlib, matplotlib.pyplot
+import itertools
 from os.path import expanduser
 
 import pyqtgraph as pg
@@ -49,7 +50,6 @@ class MainWindow(QtGui.QMainWindow):
         # lp contains a map of distances between alignments
         self.lp = None
         self.filtered_frames = None
-        self.aligned_frames = None
         self.roi_frames = None
         self.gsr_frames = None
         self.mask = None
@@ -203,6 +203,7 @@ class MainWindow(QtGui.QMainWindow):
         self.sidePanel.buttRoiSave.clicked.connect(self.vb.saveROI)
 
         self.sidePanel.alignButton.clicked.connect(self.do_alignment)
+        self.sidePanel.concatButton.clicked.connect(self.do_concat)
         self.sidePanel.temporalFilterButton.clicked.connect(self.temporal_filter)
         self.vb.clicked.connect(self.on_vbc_clicked)
         #self.vb.mouseClickEvent.connect(self.compute_spc_map)
@@ -820,28 +821,25 @@ class MainWindow(QtGui.QMainWindow):
     # Custom-made functions
     def do_alignment(self):
         reference_for_align = str(self.sidePanel.imageFileList.currentItem().text())
-        if reference_for_align=='':
+        if reference_for_align == '':
             return
 
         # Get Filenames
-        fileNames = range(0,self.sidePanel.imageFileList.__len__())
-        for i in range(0,self.sidePanel.imageFileList.__len__()):
+        fileNames = range(0, self.sidePanel.imageFileList.__len__())
+        for i in range(0, self.sidePanel.imageFileList.__len__()):
             fileNames[i] = str(self.sidePanel.imageFileList.item(i).text())
 
-         #   QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
+        #   QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
 
         # Fix for PySide. PySide doesn't support QStringList types. PyQt4 getOpenFileNames returns a QStringList, whereas PySide
         # returns a type (the first entry being the list of filenames).
-        if isinstance(fileNames,types.TupleType): fileNames = fileNames[0]
-        if hasattr(QtCore,'QStringList') and isinstance(fileNames, QtCore.QStringList): fileNames = [str(i) for i in fileNames]
+        if isinstance(fileNames, types.TupleType): fileNames = fileNames[0]
+        if hasattr(QtCore, 'QStringList') and isinstance(fileNames, QtCore.QStringList): fileNames = [str(i) for i in fileNames]
 
-        # Collect all user-defined variables (and variables immediately inferred from user-selections)
+        # Collect user-defined variables (and variables immediately inferred from user-selections)
         width = int(self.sidePanel.vidWidthValue.text())
         height = int(self.sidePanel.vidHeightValue.text())
         frame_ref = int(self.sidePanel.frameRefNameValue.text())
-        frame_rate = int(self.sidePanel.frameRateValue.text())
-        f_high = float(self.sidePanel.f_highValue.text())
-        f_low = float(self.sidePanel.f_lowValue.text())
         raw_file_to_align_ind = int(self.sidePanel.imageFileList.currentIndex().row())
 
         # Get a dictionary of all videos
@@ -862,15 +860,25 @@ class MainWindow(QtGui.QMainWindow):
         # Do alignments
         print("Doing alignments...")
         if (self.lp == None):
-            self.lp=dj.get_distance_var(fileNames,width,height,frame_ref)
-        print('Working on this file: '+reference_for_align)
+            self.lp = dj.get_distance_var(fileNames,  width, height, frame_ref)
+        print('Working on this file: ' + reference_for_align)
 
         frames = self.videoFiles[reference_for_align]
-        #frames = dj.get_frames(reference_for_align, width, height) # This might work better if you have weird error: frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
-        frames = dj.shift_frames(frames, self.lp[raw_file_to_align_ind])
+        # frames = dj.get_frames(reference_for_align, width, height) # This might work better if you have weird error: frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
 
-        self.aligned_frames = frames
+        frames = dj.shift_frames(frames, self.lp[raw_file_to_align_ind])
         frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"aligned.raw")
+
+    def do_concat(self):
+        # Get Filenames
+        fileNames = range(0, self.sidePanel.imageFileList.__len__())
+        for i in range(0, self.sidePanel.imageFileList.__len__()):
+            fileNames[i] = str(self.sidePanel.imageFileList.item(i).text())
+
+        concat_frames = np.concatenate(self.videoFiles.values())
+        concat_frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"concatenated.raw")
+
+
 
     def temporal_filter(self):
         # Collect all user-defined variables (and variables immediately inferred from user-selections)
