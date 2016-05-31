@@ -111,7 +111,8 @@ def find_min_ref(lor):
 
 
 
-def get_distance_var(lof,width,height,frame_oi):
+def get_distance_var(lof,width,height,frame_oi,dtype):
+
 
     filtered_frames=[]
     print('')
@@ -120,6 +121,9 @@ def get_distance_var(lof,width,height,frame_oi):
     for f in lof:
         print(f)
         # todo: This is an example of shit duct tape coding
+
+
+
         try:
             frames = get_green_frames(f, width, height, np.uint8)
         except:

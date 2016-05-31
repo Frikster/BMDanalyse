@@ -36,32 +36,17 @@ def get_frames(rgb_file, width, height, dat_type):
         ########
         # Cat method
         img = Image.open(rgb_file)
+        n_pixels = img.height
+        n_frames = img.n_frames
 
-        counter=0
-        # if True:
-        #     while True:
-        #         try:
-        #             img.seek(counter)
-        #         except EOFError:
-        #             break
-        #         counter+=1
-        #         print counter
+        images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype=dat_type)
 
-        #Default pic sizes
-        n_pixels = 128
-
-        # Initialize 3D image array
-        n_frames = counter
-        n_frames = 20000
-
-        images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype = np.float64)
-
-        print("n_frames: ", n_frames)
-        for i in range(0, n_frames,1):
+        print("n_frames: " + str(n_frames))
+        for i in range(0, n_frames, 1):
             img.seek(i)
             #print "Loading frame: ", i
             #images_raw [i] = np.flipud(np.fliplr(np.float16(img))) #FLIP IMAGES FOR Experiments Nov and Dec 2015
-            images_raw [i] = np.float64(img) #2016-1-11 2016-1-14 experiment no flipping needed
+            images_raw[i] = np.array(img, dtype=dat_type) #2016-1-11 2016-1-14 experiment no flipping needed
         imarray = images_raw
 
         ######
@@ -92,11 +77,11 @@ def get_frames(rgb_file, width, height, dat_type):
     with open(rgb_file, "rb") as file:
         frames = np.fromfile(file, dtype=dat_type)
         total_number_of_frames = int(np.size(frames)/frame_size)
-        print(total_number_of_frames)
+        print("n_frames: " + str(total_number_of_frames))
         frames = np.reshape(frames, (total_number_of_frames, width, height, 3))
         # frames = frames[starting_frame:, :, :, 1]
         frames = frames[:, :, :, 1]
-        frames = np.asarray(frames, dtype=np.float32)
+        frames = np.asarray(frames, dtype=dat_type)
         total_number_of_frames = frames.shape[0]
 
     return frames
@@ -106,32 +91,17 @@ def get_green_frames(g_file,width,height,dat_type):
         ########
         # Cat method
         img = Image.open(g_file)
+        n_pixels = img.height
+        n_frames = img.n_frames
 
-        counter=0
-        # if True:
-        #     while True:
-        #         try:
-        #             img.seek(counter)
-        #         except EOFError:
-        #             break
-        #         counter+=1
-        #         print counter
+        images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype=dat_type)
 
-        #Default pic sizes
-        n_pixels = 128
-
-        # Initialize 3D image array
-        n_frames = counter
-        n_frames = 20000
-
-        images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype = np.float64)
-
-        print("n_frames: "+ n_frames)
-        for i in range(0, n_frames,1):
+        print("n_frames: " + str(n_frames))
+        for i in range(0, n_frames, 1):
             img.seek(i)
             #print "Loading frame: ", i
             #images_raw [i] = np.flipud(np.fliplr(np.float16(img))) #FLIP IMAGES FOR Experiments Nov and Dec 2015
-            images_raw [i] = np.float64(img) #2016-1-11 2016-1-14 experiment no flipping needed
+            images_raw[i] = np.array(img, dtype=dat_type) #2016-1-11 2016-1-14 experiment no flipping needed
         imarray = images_raw
 
         return imarray
@@ -141,7 +111,7 @@ def get_green_frames(g_file,width,height,dat_type):
         total_number_of_frames = int(np.size(frames)/(width*height))
         print("n_frames: "+str(total_number_of_frames))
         frames = np.reshape(frames, (total_number_of_frames, width, height))
-        frames = np.asarray(frames, dtype=np.float32)
+        frames = np.asarray(frames, dtype=dat_type)
     return frames
 
 def get_processed_frames(rgb_file,width,height):

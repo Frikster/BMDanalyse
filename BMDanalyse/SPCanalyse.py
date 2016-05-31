@@ -146,8 +146,8 @@ class MainWindow(QtGui.QMainWindow):
      
         #self.addROIRectAct = QActionCustom("Rectangular",self.submenu)
         #self.addROIPolyAct = QActionCustom("Polygon",self.submenu)
-        self.addROIRectAct = QtGui.QAction("Rectangular",self.submenu)
-        self.addROIPolyAct = QtGui.QAction("Polygon",self.submenu)
+        self.addROIRectAct = QtGui.QAction("Rectangular", self.submenu)
+        self.addROIPolyAct = QtGui.QAction("Polygon", self.submenu)
         
         #self.addROIRectAct.clickEvent.connect(self.vb.addROI)
         #self.addROIPolyAct.clickEvent.connect(self.vb.addPolyRoiRequest) 
@@ -217,8 +217,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def onAbout(self):
         """ About BMDanalyse message"""
-        author  ='Michael Hogg'
-        date    ='2012 - 2013'        
+        author  ='Cornelis Dirk Haupt'
+        date    ='2016'
         version = self.__version__
             
         QtGui.QMessageBox.about(self, 'About BMDanalyse', 
@@ -270,19 +270,29 @@ class MainWindow(QtGui.QMainWindow):
 
         width = int(self.sidePanel.vidWidthValue.text())
         height = int(self.sidePanel.vidHeightValue.text())
+        dtypeString = str(self.sidePanel.dtypeValue.text())
 
-        # todo: Make it so that User can specify input file data type
         if len(fileNames)>0:
             for fileName in fileNames:
                 if fileName!='':
                     try:
-                        try:
-                            frames = fj.get_frames(str(fileName), width, height, np.uint8)
-                        except:
-                            frames = fj.get_frames(str(fileName), width, height, np.float32)
+                        frames = fj.get_frames(str(fileName), width, height, np.dtype(dtypeString))
                     except:
-                        frames = fj.get_green_frames(str(fileName), width, height, np.float32)
+                        frames = fj.get_green_frames(str(fileName), width, height, np.dtype(dtypeString))
                     newVids[fileName] = frames
+
+        # todo: Make it so that User can specify input file data type
+        # if len(fileNames)>0:
+        #     for fileName in fileNames:
+        #         if fileName!='':
+        #             try:
+        #                 try:
+        #                     frames = fj.get_frames(str(fileName), width, height, np.uint8)
+        #                 except:
+        #                     frames = fj.get_frames(str(fileName), width, height, np.float32)
+        #             except:
+        #                 frames = fj.get_green_frames(str(fileName), width, height, np.float32)
+        #             newVids[fileName] = frames
             
             # Add filenames to list widget. Only add new filenames. If filename exists aready, then
             # it will not be added, but data will be updated
@@ -710,16 +720,16 @@ class MainWindow(QtGui.QMainWindow):
         self.plotWin.editBox.setModal(True)
         # Add table
         layout = QtGui.QVBoxLayout()
-        layout.setContentsMargins(10,10,10,10)
+        layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(20)
         rows,cols = self.BMDchange.shape
-        self.tableResults = MyTableWidget(rows,cols+1,self.plotWin.editBox)
+        self.tableResults = MyTableWidget(rows, cols+1,self.plotWin.editBox)
         self.tableResults.verticalHeader().setVisible(True)
         # Set headers
-        self.tableResults.setHorizontalHeaderItem(0,QtGui.QTableWidgetItem('Time'))
+        self.tableResults.setHorizontalHeaderItem(0, QtGui.QTableWidgetItem('Time'))
         for i in xrange(cols):
             header = QtGui.QTableWidgetItem(self.roiNames[i])
-            self.tableResults.setHorizontalHeaderItem(i+1,header)
+            self.tableResults.setHorizontalHeaderItem(i+1, header)
         # Add values to table
         self.fillEditBox()
         # Set layout
@@ -863,11 +873,17 @@ class MainWindow(QtGui.QMainWindow):
             self.lp = dj.get_distance_var(fileNames,  width, height, frame_ref)
         print('Working on this file: ' + reference_for_align)
 
-        frames = self.videoFiles[reference_for_align]
         # frames = dj.get_frames(reference_for_align, width, height) # This might work better if you have weird error: frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
 
-        frames = dj.shift_frames(frames, self.lp[raw_file_to_align_ind])
-        frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"aligned.raw")
+        frames_ref = self.videoFiles[reference_for_align]
+
+        for ind in range(len(self.lp)):
+            frames = self.videoFiles[fileNames[ind]]
+            frames = dj.shift_frames(frames, self.lp[ind])
+            frames.astype('float32').tofile(os.path.expanduser('~/Downloads/') + "aligned_" + str(ind) + ".raw")
+
+
+
 
     def do_concat(self):
         # Get Filenames
@@ -895,10 +911,10 @@ class MainWindow(QtGui.QMainWindow):
         frames = self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())]
 
         # Compute df/d0 and save to file
-        avg_frames=fj.calculate_avg(frames)
-        frames=fj.cheby_filter(frames, f_low, f_high, frame_rate)
-        frames+=avg_frames
-        frames=fj.calculate_df_f0(frames)
+        avg_frames = fj.calculate_avg(frames)
+        frames = fj.cheby_filter(frames, f_low, f_high, frame_rate)
+        frames += avg_frames
+        frames = fj.calculate_df_f0(frames)
         frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
         print("temporal filter saved to"+os.path.expanduser(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw"))
         self.filtered_frames = frames
@@ -918,7 +934,7 @@ class MainWindow(QtGui.QMainWindow):
         raw_file_to_align_ind = int(self.sidePanel.imageFileList.currentIndex().row())
 
         # Todo: incorporate gsr (needs mask filename)
-        frames=fj.gsr(frames,width,height)
+        frames = fj.gsr(frames, width, height)
         frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"gsr.raw")
         self.gsr_frames = frames
 

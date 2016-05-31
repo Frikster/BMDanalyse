@@ -30,6 +30,8 @@ class SidePanel(QtGui.QWidget):
     
         # Image filelist
         imageFileListLabel = QtGui.QLabel("Loaded images")
+        self.dtypeLabel = QtGui.QLabel("data type to be loaded")
+        self.dtypeValue = QtGui.QLineEdit("float32")
         self.frameRefNameLabel  = QtGui.QLabel("Frame reference for alignment")
         self.frameRefNameValue  = QtGui.QLineEdit("400")
         self.vidWidthLabel   = QtGui.QLabel("Width")
@@ -37,17 +39,17 @@ class SidePanel(QtGui.QWidget):
         self.vidHeightLabel  = QtGui.QLabel("Height")
         self.vidHeightValue  = QtGui.QLineEdit("256")
         self.imageFileList = QtGui.QListWidget()
-        self.alignButton = QtGui.QPushButton('Alignment')
+        self.alignButton = QtGui.QPushButton('Align All to top')
         self.concatButton = QtGui.QPushButton('Concatenate All')
         self.temporalFilterButton = QtGui.QPushButton('Temporal filter')
         
         # Image buttons
-        self.buttImageAdd  = QtGui.QPushButton(self.icons['imageAddIcon'],"")
-        self.buttImageRem  = QtGui.QPushButton(self.icons['imageRemIcon'],"")
-        self.buttImageUp   = QtGui.QPushButton(self.icons['imageUpIcon'],"")
-        self.buttImageDown = QtGui.QPushButton(self.icons['imageDownIcon'],"")
-        imageButtons       = [self.buttImageAdd,self.buttImageRem,self.buttImageUp,self.buttImageDown]
-        imageToolTips      = ['Add image(s)','Remove selected image','Move image down','Move image up']
+        self.buttImageAdd  = QtGui.QPushButton(self.icons['imageAddIcon'], "")
+        self.buttImageRem  = QtGui.QPushButton(self.icons['imageRemIcon'], "")
+        self.buttImageUp   = QtGui.QPushButton(self.icons['imageUpIcon'], "")
+        self.buttImageDown = QtGui.QPushButton(self.icons['imageDownIcon'], "")
+        imageButtons       = [self.buttImageAdd, self.buttImageRem, self.buttImageUp, self.buttImageDown]
+        imageToolTips      = ['Add image(s)', 'Remove selected image', 'Move image down', 'Move image up']
         for i in xrange(len(imageButtons)): 
             image = imageButtons[i]
             image.setMinimumSize(self.buttMinimumSize)
@@ -72,6 +74,8 @@ class SidePanel(QtGui.QWidget):
         self.imageToolbox.setLayout(imageToolboxLayout)       
         imageToolboxLayout.addWidget(imageFileListLabel)
 
+        imageToolboxLayout.addWidget(self.dtypeLabel)
+        imageToolboxLayout.addWidget(self.dtypeValue)
         imageToolboxLayout.addWidget(self.frameRefNameLabel)
         imageToolboxLayout.addWidget(self.frameRefNameValue)
         imageToolboxLayout.addWidget(self.vidWidthLabel)
