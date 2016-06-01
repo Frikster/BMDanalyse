@@ -111,7 +111,7 @@ def find_min_ref(lor):
 
 
 
-def get_distance_var(lof,width,height,frame_oi,dtype):
+def get_distance_var(lof, width, height, frame_oi, dtype_string):
 
 
     filtered_frames=[]
@@ -120,18 +120,11 @@ def get_distance_var(lof,width,height,frame_oi,dtype):
     print(lof)
     for f in lof:
         print(f)
-        # todo: This is an example of shit duct tape coding
-
-
-
-        try:
-            frames = get_green_frames(f, width, height, np.uint8)
-        except:
-            frames = get_green_frames(f, width, height, np.float32)
+        frames = get_green_frames(f, width, height, dtype_string)
         print((type(frames)))
         filtered_frames.append(filter2_test_j(frames[frame_oi,:,:]))
 
-    print("Getting all the distances..")
+    print("Getting all the distances.." )
     # Get all the distances using all videos as ref point, thus size of matrix is n^2
     list_of_ref = []
     for frame_ref in filtered_frames:

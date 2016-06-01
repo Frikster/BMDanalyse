@@ -465,7 +465,7 @@ class MultiRoiViewBox(pg.ViewBox):
         # todo: validate safe removal of line
         #else: self.img.setLookupTable(self.viewMode.lut)
        
-    def showImage(self,arr):
+    def showImage(self, arr):
         if arr==None: 
             self.img = None
             return
