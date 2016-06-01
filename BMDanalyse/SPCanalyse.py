@@ -405,8 +405,9 @@ class MainWindow(QtGui.QMainWindow):
         # Set this value to width × height × bytes-per-pixel × n to skip n images for each image read. So use 4194304
         # Dont forget to set Endian value and set to 64 bit
         #todo: clean up your dirty long code.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] turns up everywhere
+        dtype_string = str(self.sidePanel.dtypeValue.text())
         self.roi_frames = (self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] * combined_mask[np.newaxis, :, :])
-        self.roi_frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"ROI.raw")
+        self.roi_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"ROI.raw")
         print("ROI saved to " + os.path.expanduser('~/Downloads/')+"ROI.raw")
 
 
@@ -851,6 +852,7 @@ class MainWindow(QtGui.QMainWindow):
         height = int(self.sidePanel.vidHeightValue.text())
         frame_ref = int(self.sidePanel.frameRefNameValue.text())
         raw_file_to_align_ind = int(self.sidePanel.imageFileList.currentIndex().row())
+        dtype_string = str(self.sidePanel.dtypeValue.text())
 
         # Get a dictionary of all videos
         newVids = {}
@@ -870,7 +872,7 @@ class MainWindow(QtGui.QMainWindow):
         # Do alignments
         print("Doing alignments...")
         if (self.lp == None):
-            self.lp = dj.get_distance_var(fileNames,  width, height, frame_ref)
+            self.lp = dj.get_distance_var(fileNames,  width, height, frame_ref, dtype_string)
         print('Working on this file: ' + reference_for_align)
 
         # frames = dj.get_frames(reference_for_align, width, height) # This might work better if you have weird error: frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)
@@ -880,19 +882,18 @@ class MainWindow(QtGui.QMainWindow):
         for ind in range(len(self.lp)):
             frames = self.videoFiles[fileNames[ind]]
             frames = dj.shift_frames(frames, self.lp[ind])
-            frames.astype('float32').tofile(os.path.expanduser('~/Downloads/') + "aligned_" + str(ind) + ".raw")
-
-
+            frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/') + "aligned_" + str(ind) + ".raw")
 
 
     def do_concat(self):
+        dtype_string = str(self.sidePanel.dtypeValue.text())
         # Get Filenames
         fileNames = range(0, self.sidePanel.imageFileList.__len__())
         for i in range(0, self.sidePanel.imageFileList.__len__()):
             fileNames[i] = str(self.sidePanel.imageFileList.item(i).text())
 
         concat_frames = np.concatenate(self.videoFiles.values())
-        concat_frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"concatenated.raw")
+        concat_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"concatenated.raw")
 
 
 
@@ -905,6 +906,7 @@ class MainWindow(QtGui.QMainWindow):
         f_high = float(self.sidePanel.f_highValue.text())
         f_low = float(self.sidePanel.f_lowValue.text())
         raw_file_to_align_ind = int(self.sidePanel.imageFileList.currentIndex().row())
+        dtype_string = str(self.sidePanel.dtypeValue.text())
 
         # todo: Rethink design... do I need roi_frames?
         frames = self.roi_frames
@@ -915,7 +917,7 @@ class MainWindow(QtGui.QMainWindow):
         frames = fj.cheby_filter(frames, f_low, f_high, frame_rate)
         frames += avg_frames
         frames = fj.calculate_df_f0(frames)
-        frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
+        frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
         print("temporal filter saved to"+os.path.expanduser(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw"))
         self.filtered_frames = frames
 
@@ -932,10 +934,11 @@ class MainWindow(QtGui.QMainWindow):
         f_high = float(self.sidePanel.f_highValue.text())
         f_low = float(self.sidePanel.f_lowValue.text())
         raw_file_to_align_ind = int(self.sidePanel.imageFileList.currentIndex().row())
+        dtype_string = str(self.sidePanel.dtypeValue.text())
 
         # Todo: incorporate gsr (needs mask filename)
         frames = fj.gsr(frames, width, height)
-        frames.astype('float32').tofile(os.path.expanduser('~/Downloads/')+"gsr.raw")
+        frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"gsr.raw")
         self.gsr_frames = frames
 
 
@@ -971,6 +974,7 @@ class MainWindow(QtGui.QMainWindow):
             #self.output_spc()
         else:
             print("You still need to apply a temporal filter")
+
 class MyTableWidget(QtGui.QTableWidget):  
     def __init__(self, x, y, parent = None):
         super(MyTableWidget, self).__init__(x, y, parent)
