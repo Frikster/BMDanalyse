@@ -87,7 +87,9 @@ class MainWindow(QtGui.QMainWindow):
         self.viewMain = GraphicsLayoutWidget()  # A GraphicsLayout within a GraphicsView
         leftFrameLayout.addWidget(self.viewMain)
         self.viewMain.setMinimumSize(200,200)
-        self.vb = MultiRoiViewBox(lockAspect=True,enableMenu=True)
+        self.vb = MultiRoiViewBox(lockAspect=True, enableMenu=True)
+        # Todo: Add axis here?
+        self.viewMain.addPlot()
         self.viewMain.addItem(self.vb)
         # todo: uncomment as need be
         #self.vb.disableAutoRange()
@@ -872,7 +874,7 @@ class MainWindow(QtGui.QMainWindow):
         # Do alignments
         print("Doing alignments...")
         if (self.lp == None):
-            self.lp = dj.get_distance_var(fileNames,  width, height, frame_ref, dtype_string)
+            self.lp = dj.get_distance_var(fileNames, width, height, frame_ref, newVids)
         print('Working on this file: ' + reference_for_align)
 
         # frames = dj.get_frames(reference_for_align, width, height) # This might work better if you have weird error: frames = dj.get_green_frames(str(self.lof[raw_file_to_align_ind]),width,height)

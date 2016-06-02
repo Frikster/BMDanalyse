@@ -86,7 +86,7 @@ def get_frames(rgb_file, width, height, dat_type):
 
     return frames
 
-def get_green_frames(g_file,width,height,dat_type):
+def get_green_frames(g_file,width,height,dat_type="float32"):
     if(g_file.endswith(".tif")):
         ########
         # Cat method

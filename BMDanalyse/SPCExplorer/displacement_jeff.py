@@ -111,7 +111,7 @@ def find_min_ref(lor):
 
 
 
-def get_distance_var(lof, width, height, frame_oi, dtype_string):
+def get_distance_var(lof, width, height, frame_oi, frames_dict):
 
 
     filtered_frames=[]
@@ -120,7 +120,9 @@ def get_distance_var(lof, width, height, frame_oi, dtype_string):
     print(lof)
     for f in lof:
         print(f)
-        frames = get_green_frames(f, width, height, dtype_string)
+        #todo: Load frames only once and pass frames around as paramater
+        #frames = frames_dict[f]
+        frames = get_green_frames(f, width, height, "uint8")
         print((type(frames)))
         filtered_frames.append(filter2_test_j(frames[frame_oi,:,:]))
 

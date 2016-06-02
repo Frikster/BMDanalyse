@@ -27,7 +27,7 @@ class ImageAnalysisViewBox(pg.ViewBox):
     """
 
     def __init__(self,parent=None,border=None,lockAspect=False,enableMouse=True,invertY=False,enableMenu=True,name=None):
-        pg.ViewBox.__init__(self,parent,border,lockAspect,enableMouse,invertY,enableMenu,name)
+        pg.ViewBox.__init__(self, parent, border, lockAspect, enableMouse, invertY, enableMenu, name)
    
         self.menu = None # Override pyqtgraph ViewBoxMenu 
         self.menu = self.getMenu(None)       
@@ -311,7 +311,7 @@ class MultiRoiViewBox(pg.ViewBox):
             else: 
                 self.setCurrentROIindex(None)
         
-    def addRoiRequest(self,ev):
+    def addRoiRequest(self, ev):
         """ Function to addROI at an event screen position """
         # Get position
         pos  = self.mapSceneToView(ev.scenePos())        
@@ -328,7 +328,7 @@ class MultiRoiViewBox(pg.ViewBox):
         xypos = (xpos,ypos)
         self.addROI(pos=xypos)
         
-    def addROI(self,pos=None,size=None,angle=0.0):
+    def addROI(self, pos=None, size=None, angle=0.0):
         """ Add an ROI to the ViewBox """    
         xr,yr = self.viewRange()
         if pos is None:
@@ -470,7 +470,8 @@ class MultiRoiViewBox(pg.ViewBox):
             self.img = None
             return
         if self.img==None:
-            self.img = pg.ImageItem(arr,autoRange=False,autoLevels=False)
+            #arr = arr.astype("float64")
+            self.img = pg.ImageItem(arr, autoRange=False, autoLevels=False)
             self.addItem(self.img)
         # Add/readd crosshair
         self.addItem(self.vLine, ignoreBounds=True)
@@ -478,7 +479,7 @@ class MultiRoiViewBox(pg.ViewBox):
         proxy = pg.SignalProxy(self.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
         self.scene().sigMouseMoved.connect(self.mouseMoved)
         self.img.setImage(arr)
-        #self.img.setImage(arr,autoLevels=False)
+        #self.img.setImage(arr, autoLevels=False)
         self.updateView()
 
 
