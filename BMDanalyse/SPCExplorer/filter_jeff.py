@@ -22,12 +22,6 @@ from numpy import *
 
 #save_dir = "/media/user/DataFB/AutoHeadFix_Data/0731/EL_LRL/"
 
-#todo: These are evil globals
-#width = 128
-#height = 128
-#frame_rate = 30.0
-#frame_size = width * height * 3
-
 starting_frame = 100
 
 def get_frames(rgb_file, width, height, dat_type):
@@ -46,7 +40,9 @@ def get_frames(rgb_file, width, height, dat_type):
             img.seek(i)
             #print "Loading frame: ", i
             #images_raw [i] = np.flipud(np.fliplr(np.float16(img))) #FLIP IMAGES FOR Experiments Nov and Dec 2015
-            images_raw[i] = np.array(img, dtype=dat_type) #2016-1-11 2016-1-14 experiment no flipping needed
+            # todo: dtype needed?
+            images_raw[i] = np.array(img)
+            #images_raw[i] = np.array(img, dtype=dat_type)
         imarray = images_raw
 
         ######

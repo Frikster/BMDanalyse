@@ -13,7 +13,7 @@ from os.path import expanduser
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
-from pyqtgraph.widgets.GraphicsLayoutWidget import GraphicsLayoutWidget
+from pyqtgraph.widgets.GraphicsLayoutWidget import GraphicsLayoutWidget, GraphicsView
 import numpy as np
 from pyqtgraph.widgets.MatplotlibWidget import MatplotlibWidget
 import matplotlib.pyplot as plt
@@ -83,16 +83,29 @@ class MainWindow(QtGui.QMainWindow):
         leftFrame.setFrameStyle(QtGui.QFrame.Panel)
         leftFrameLayout.setContentsMargins(0,0,5,0)
 
-        # Left frame contents     
-        self.viewMain = GraphicsLayoutWidget()  # A GraphicsLayout within a GraphicsView
+        # Left frame contents
+        self.viewMain = pg.GraphicsView()
+        self.viewMain.setMinimumSize(200, 200)
         leftFrameLayout.addWidget(self.viewMain)
-        self.viewMain.setMinimumSize(200,200)
+
+        l = QtGui.QGraphicsGridLayout()
+        self.viewMain.centralWidget.setLayout(l)
+        l.setHorizontalSpacing(0)
+        l.setVerticalSpacing(0)
+
         self.vb = MultiRoiViewBox(lockAspect=True, enableMenu=True)
-        # Todo: Add axis here?
-        self.viewMain.addPlot()
-        self.viewMain.addItem(self.vb)
+
+        l.addItem(self.vb, 0, 1)
+        self.xScale = pg.AxisItem(orientation='bottom', linkView=self.vb)
+        self.xScale.setLabel(text="<span style='color: #ff0000; font-weight: bold'>X</span> <i>Axis</i>", units="s")
+        l.addItem(self.xScale, 1, 1)
+
+        self.yScale = pg.AxisItem(orientation='left', linkView=self.vb)
+        self.yScale.setLabel('Y Axis', units='V')
+        l.addItem(self.yScale, 0, 0)
+
         # todo: uncomment as need be
-        #self.vb.disableAutoRange()
+        # self.vb.disableAutoRange()
         self.vb.enableAutoRange()
     
         # Right frame
@@ -307,7 +320,7 @@ class MainWindow(QtGui.QMainWindow):
             self.vb.enableAutoRange()
             if self.sidePanel.imageFileList.currentRow()==-1: self.sidePanel.imageFileList.setCurrentRow(0)
             self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
-            self.vb.disableAutoRange()            
+            self.vb.disableAutoRange()
 
 
     def removeImage(self):
@@ -343,6 +356,7 @@ class MainWindow(QtGui.QMainWindow):
         imgarr = self.videoFiles[imageFilename][frameRef]
         self.preprocess_for_showImage(imgarr)
         self.vb.showImage(self.arr)
+
 
     def preprocess_for_showImage(self, imgarr):
         imgarr = imgarr.swapaxes(0,1)
