@@ -42,7 +42,8 @@ class SidePanel(QtGui.QWidget):
         self.alignButton = QtGui.QPushButton('Align All to top')
         self.concatButton = QtGui.QPushButton('Concatenate All')
         self.temporalFilterButton = QtGui.QPushButton('Temporal filter')
-        
+        self.gsrButton = QtGui.QPushButton('Global Signal Regression')
+
         # Image buttons
         self.buttImageAdd  = QtGui.QPushButton(self.icons['imageAddIcon'], "")
         self.buttImageRem  = QtGui.QPushButton(self.icons['imageRemIcon'], "")
@@ -87,6 +88,7 @@ class SidePanel(QtGui.QWidget):
         imageToolboxLayout.addWidget(self.alignButton)
         imageToolboxLayout.addWidget(self.concatButton)
         imageToolboxLayout.addWidget(self.temporalFilterButton)
+        imageToolboxLayout.addWidget(self.gsrButton)
 
     def createRoiMenu(self):
         self.roiMenu = popupMenu(self, self.buttRoiAdd)        

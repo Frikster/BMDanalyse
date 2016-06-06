@@ -5,10 +5,12 @@ from scipy.stats.stats import pearsonr
 from scipy import ndimage
 #from joblib import Parallel, delayed
 #import multiprocessing
-#import parmap
+import parmap
 import image_registration
 from PIL import Image
 from numpy import *
+import tifffile as tiff
+
 
 #from libtiff import TIFF
 
@@ -22,28 +24,50 @@ from numpy import *
 
 #save_dir = "/media/user/DataFB/AutoHeadFix_Data/0731/EL_LRL/"
 
-starting_frame = 100
+#starting_frame = 100
 
 def get_frames(rgb_file, width, height, dat_type):
 
     if(rgb_file.endswith(".tif")):
+        imarray = tiff.imread(rgb_file)
+        return imarray
+
+    if (rgb_file.endswith(".raw")):
+        dat_type = np.dtype(dat_type)
+        with open(rgb_file, "rb") as file:
+            frames = np.fromfile(file, dtype=dat_type)
+            total_number_of_frames = int(np.size(frames) / (width * height * 3))
+            print("n_frames: " + str(total_number_of_frames))
+            frames = np.reshape(frames, (total_number_of_frames, width, height, 3))
+            #todo: note that you got rid of starting_frame!
+            # frames = frames[starting_frame:, :, :, 1]
+            frames = frames[:, :, :, 1]
+            frames = np.asarray(frames, dtype=dat_type)
+            return frames
+
+    if (rgb_file.endswith(".npy")):
+        frames = np.load(rgb_file)
+        frames[isnan(frames)] = 0
+        return frames
+
+    print("unsupported file type")
         ########
         # Cat method
-        img = Image.open(rgb_file)
-        n_pixels = img.height
-        n_frames = img.n_frames
-
-        images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype=dat_type)
-
-        print("n_frames: " + str(n_frames))
-        for i in range(0, n_frames, 1):
-            img.seek(i)
-            #print "Loading frame: ", i
-            #images_raw [i] = np.flipud(np.fliplr(np.float16(img))) #FLIP IMAGES FOR Experiments Nov and Dec 2015
-            # todo: dtype needed?
-            images_raw[i] = np.array(img)
-            #images_raw[i] = np.array(img, dtype=dat_type)
-        imarray = images_raw
+        # img = Image.open(rgb_file)
+        # n_pixels = img.height
+        # n_frames = img.n_frames
+        #
+        # images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype=dat_type)
+        #
+        # print("n_frames: " + str(n_frames))
+        # for i in range(0, n_frames, 1):
+        #     img.seek(i)
+        #     #print "Loading frame: ", i
+        #     #images_raw [i] = np.flipud(np.fliplr(np.float16(img))) #FLIP IMAGES FOR Experiments Nov and Dec 2015
+        #     # todo: dtype needed?
+        #     images_raw[i] = np.array(img)
+        #     #images_raw[i] = np.array(img, dtype=dat_type)
+        #imarray = images_raw
 
         ######
         # # plt method
@@ -66,49 +90,47 @@ def get_frames(rgb_file, width, height, dat_type):
         # #PIL method
         # im = Image.open(rgb_file)
         # imarray = np.array(im)
-        return imarray
+        #return imarray
 
-    frame_size = width * height * 3
-    #frame_size = width * height
-    with open(rgb_file, "rb") as file:
-        frames = np.fromfile(file, dtype=dat_type)
-        total_number_of_frames = int(np.size(frames)/frame_size)
-        print("n_frames: " + str(total_number_of_frames))
-        frames = np.reshape(frames, (total_number_of_frames, width, height, 3))
-        # frames = frames[starting_frame:, :, :, 1]
-        frames = frames[:, :, :, 1]
-        frames = np.asarray(frames, dtype=dat_type)
-        total_number_of_frames = frames.shape[0]
 
-    return frames
-
-def get_green_frames(g_file,width,height,dat_type="float32"):
+def get_green_frames(g_file, width, height, dat_type):
     if(g_file.endswith(".tif")):
-        ########
-        # Cat method
-        img = Image.open(g_file)
-        n_pixels = img.height
-        n_frames = img.n_frames
-
-        images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype=dat_type)
-
-        print("n_frames: " + str(n_frames))
-        for i in range(0, n_frames, 1):
-            img.seek(i)
-            #print "Loading frame: ", i
-            #images_raw [i] = np.flipud(np.fliplr(np.float16(img))) #FLIP IMAGES FOR Experiments Nov and Dec 2015
-            images_raw[i] = np.array(img, dtype=dat_type) #2016-1-11 2016-1-14 experiment no flipping needed
-        imarray = images_raw
-
+        imarray = tiff.imread(g_file)
         return imarray
 
-    with open(g_file, "rb") as file:
-        frames = np.fromfile(file, dtype=dat_type)
-        total_number_of_frames = int(np.size(frames)/(width*height))
-        print("n_frames: "+str(total_number_of_frames))
-        frames = np.reshape(frames, (total_number_of_frames, width, height))
-        frames = np.asarray(frames, dtype=dat_type)
-    return frames
+    if (g_file.endswith(".raw")):
+        dat_type = np.dtype(dat_type)
+        with open(g_file, "rb") as file:
+            frames = np.fromfile(file, dtype=dat_type)
+            total_number_of_frames = int(np.size(frames)/(width*height))
+            print("n_frames: "+str(total_number_of_frames))
+            frames = np.reshape(frames, (total_number_of_frames, width, height))
+            frames = np.asarray(frames, dtype=dat_type)
+        return frames
+
+    if (g_file.endswith(".npy")):
+        frames = np.load(g_file)
+        return frames
+
+        # ########
+        # # Cat method
+        # img = Image.open(g_file)
+        # n_pixels = img.height
+        # n_frames = img.n_frames
+        #
+        # images_raw = np.zeros((n_frames, n_pixels, n_pixels), dtype=dat_type)
+        #
+        # print("n_frames: " + str(n_frames))
+        # for i in range(0, n_frames, 1):
+        #     img.seek(i)
+        #     #print "Loading frame: ", i
+        #     #images_raw [i] = np.flipud(np.fliplr(np.float16(img))) #FLIP IMAGES FOR Experiments Nov and Dec 2015
+        #     images_raw[i] = np.array(img, dtype=dat_type) #2016-1-11 2016-1-14 experiment no flipping needed
+        # imarray = images_raw
+        #
+        # return imarray
+
+
 
 def get_processed_frames(rgb_file,width,height):
     with open(rgb_file, "rb") as file:
@@ -300,8 +322,8 @@ class CorrelationMapDisplayer:
         #for i in range(frames.shape[-1]):
         #    correlation_map.append(pearsonr(frames[:, i], seed_pixel)[0])
         # Todo: NaN's generated via this line. Why?
-        #correlation_map = parmap.map(corr, frames.T, seed_pixel)
-        correlation_map = map(corr, frames.T, seed_pixel)
+        correlation_map = parmap.map(corr, frames.T, seed_pixel)
+        #correlation_map = map(corr, frames.T, seed_pixel)
         correlation_map = np.asarray(correlation_map, dtype=np.float32)
         correlation_map = np.reshape(correlation_map, (width, height))
         print(np.shape(correlation_map))
@@ -324,12 +346,13 @@ def display_image(image, c_map, low_end_limit, high_end_limit, frames):
 
 def get_correlation_map(seed_x, seed_y, frames):
     print((seed_x,seed_y))
-    seed_pixel = np.asarray(frames[:, seed_x, seed_y], dtype=np.float32)
+    seed_pixel = np.asarray(frames[:, seed_x, seed_y])
 
-    print(np.shape(seed_pixel))
-    width=frames.shape[1]
-    height=frames.shape[2]
+    #print(np.shape(seed_pixel))
+    width = frames.shape[1]
+    height = frames.shape[2]
     # Reshape into time and space
+    frames[frames==0]=np.nan
     frames = np.reshape(frames, (frames.shape[0], width*height))
 
     print(np.shape(frames))
@@ -340,11 +363,11 @@ def get_correlation_map(seed_x, seed_y, frames):
     #for i in range(frames.shape[-1]):
     #    correlation_map.append(pearsonr(frames[:, i], seed_pixel)[0])
     # Todo: NaN's generated via this line. Why?
+    correlation_map = parmap.map(corr, frames.T, seed_pixel)
     #correlation_map = parmap.map(corr, frames.T, seed_pixel)
-    correlation_map = map(corr, frames.T, seed_pixel)
-    correlation_map = np.asarray(correlation_map, dtype=np.float32)
+    #correlation_map = np.asarray(correlation_map, dtype=np.float32)
     correlation_map = np.reshape(correlation_map, (width, height))
-    print(np.shape(correlation_map))
+    #print(np.shape(correlation_map))
 
     return correlation_map
 

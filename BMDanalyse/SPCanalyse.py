@@ -49,6 +49,7 @@ class MainWindow(QtGui.QMainWindow):
         self.roiNames   = None
         # lp contains a map of distances between alignments
         self.lp = None
+        self.frames_dict = {}
         self.filtered_frames = None
         self.roi_frames = None
         self.gsr_frames = None
@@ -220,6 +221,7 @@ class MainWindow(QtGui.QMainWindow):
         self.sidePanel.alignButton.clicked.connect(self.do_alignment)
         self.sidePanel.concatButton.clicked.connect(self.do_concat)
         self.sidePanel.temporalFilterButton.clicked.connect(self.temporal_filter)
+        self.sidePanel.gsrButton.clicked.connect(self.gsr)
         self.vb.clicked.connect(self.on_vbc_clicked)
         #self.vb.mouseClickEvent.connect(self.compute_spc_map)
         #self.vb.sigROIchanged.connect(self.updateROItools)
@@ -268,10 +270,10 @@ class MainWindow(QtGui.QMainWindow):
             sizex,sizey = roiState['size']
             angle       = roiState['angle']
             name  = roi.name
-            pos   = '(%.3f, %.3f)' % (posx,posy)
-            size  = '(%.3f, %.3f)' % (sizex,sizey)
+            pos   = '(%.3f, %.3f)' % (posx, posy)
+            size  = '(%.3f, %.3f)' % (sizex, sizey)
             angle = '%.3f' % angle
-            self.sidePanel.updateRoiInfoBox(name,pos,size,angle)  
+            self.sidePanel.updateRoiInfoBox(name, pos, size, angle)
     
     def loadVideos(self):
         """ Load an image to be analysed """
@@ -291,24 +293,13 @@ class MainWindow(QtGui.QMainWindow):
             for fileName in fileNames:
                 if fileName!='':
                     try:
-                        frames = fj.get_frames(str(fileName), width, height, np.dtype(dtypeString))
+                        frames = fj.get_frames(str(fileName), width, height, dtypeString)
                     except:
-                        frames = fj.get_green_frames(str(fileName), width, height, np.dtype(dtypeString))
+                        frames = fj.get_green_frames(str(fileName), width, height, dtypeString)
                     newVids[fileName] = frames
 
-        # todo: Make it so that User can specify input file data type
-        # if len(fileNames)>0:
-        #     for fileName in fileNames:
-        #         if fileName!='':
-        #             try:
-        #                 try:
-        #                     frames = fj.get_frames(str(fileName), width, height, np.uint8)
-        #                 except:
-        #                     frames = fj.get_frames(str(fileName), width, height, np.float32)
-        #             except:
-        #                 frames = fj.get_green_frames(str(fileName), width, height, np.float32)
-        #             newVids[fileName] = frames
-            
+            self.frames_dict = newVids
+
             # Add filenames to list widget. Only add new filenames. If filename exists aready, then
             # it will not be added, but data will be updated
             for fileName in sorted(newVids.keys()):
@@ -350,7 +341,7 @@ class MainWindow(QtGui.QMainWindow):
             imageName  = str(self.sidePanel.imageFileList.item(currentRow).text())
             self.showImage(imageName)   
 
-    def showImage(self,imageFilename):
+    def showImage(self, imageFilename):
         """ Shows image in main view """
         frameRef = int(self.sidePanel.frameRefNameValue.text())
         imgarr = self.videoFiles[imageFilename][frameRef]
@@ -380,6 +371,7 @@ class MainWindow(QtGui.QMainWindow):
             setImage to change the image in the view. This requires that all
             images are the same size and in the same position.
         """
+        dtypeString = str(self.sidePanel.dtypeValue.text())
         # Return if there is nod image or rois in view
         if self.vb.img==None or len(self.vb.rois)==0:
             print("there is nod image or rois in view ")
@@ -393,7 +385,7 @@ class MainWindow(QtGui.QMainWindow):
         # swap axis for aligned_frames
         # Todo: rethink design. Is aligned_frames needed?
         #frames_swap = np.swapaxes(np.swapaxes(self.aligned_frames,0,1),1,2)
-        frames_swap = np.swapaxes(np.swapaxes(self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())],0,1),1,2)
+        frames_swap = np.swapaxes(np.swapaxes(self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())], 0, 1), 1, 2)
         # Collect ROI's and combine
         numROIs = len(self.vb.rois)
         arrRegion_masks = []
@@ -402,15 +394,16 @@ class MainWindow(QtGui.QMainWindow):
             arrRegion_mask   = roi.getROIMask(frames_swap, self.vb.img, axes=(0, 1))
             arrRegion_masks.append(arrRegion_mask)
 
-        combined_mask = np.sum(arrRegion_masks,axis=0)
+        combined_mask = np.sum(arrRegion_masks, axis=0)
         # Make all rows with all zeros na
         combined_mask[(combined_mask==0)]=None
         self.mask = combined_mask
         #print(config.__file__)
         #print(os.path.basename(config.__file__))
         #print(os.path.dirname(config.__file__))
-        combined_mask.astype('uint8').tofile(os.path.expanduser('~/Downloads/')+"mask2.raw")
-        print("mask saved to " + os.path.expanduser('~/Downloads/')+"mask2.raw")
+        #np.save(combined_mask, os.path.expanduser('~/Downloads/')+"mask")
+        combined_mask.astype(dtypeString).tofile(os.path.expanduser('~/Downloads/')+"mask.raw")
+        print("mask saved to " + os.path.expanduser('~/Downloads/')+"mask.raw")
 
         # This outputs what you want!
         #plt.imshow((videoData[0]*combined_mask[:,:,np.newaxis])[:,:,400])
@@ -423,8 +416,9 @@ class MainWindow(QtGui.QMainWindow):
         #todo: clean up your dirty long code.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] turns up everywhere
         dtype_string = str(self.sidePanel.dtypeValue.text())
         self.roi_frames = (self.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] * combined_mask[np.newaxis, :, :])
+        np.save(os.path.expanduser('~/Downloads/')+"ROI", self.roi_frames)
         self.roi_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"ROI.raw")
-        print("ROI saved to " + os.path.expanduser('~/Downloads/')+"ROI.raw")
+        print("ROI saved to " + os.path.expanduser('~/Downloads/')+"ROI")
 
 
         #np.swapaxes(np.swapaxes(videoData[0]*combined_mask[:,:,np.newaxis],1,2),0,1).tofile("/home/cornelis/Downloads/test.raw")
@@ -606,7 +600,7 @@ class MainWindow(QtGui.QMainWindow):
         imageFilenames = self.sidePanel.getListOfImages()
         imageName      = imageFilenames[self.imageWinIndex]
         self.imageWin.vb.img1.setImage(self.videoFiles[str(imageName.text())], autoLevels=False)
-        self.imageWin.vb.img2.setImage(self.imageWin.imagesRGB[self.imageWinIndex],autoLevels=False) 
+        self.imageWin.vb.img2.setImage(self.imageWin.imagesRGB[self.imageWinIndex], autoLevels=False)
         self.imageWin.currLabel.setText("%i / %i" % (self.imageWinIndex+1,len(imageFilenames)))
         
     def showImageWin(self):
@@ -898,6 +892,7 @@ class MainWindow(QtGui.QMainWindow):
         for ind in range(len(self.lp)):
             frames = self.videoFiles[fileNames[ind]]
             frames = dj.shift_frames(frames, self.lp[ind])
+            np.save(os.path.expanduser('~/Downloads/') + "aligned_" + str(ind), frames)
             frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/') + "aligned_" + str(ind) + ".raw")
 
 
@@ -909,7 +904,9 @@ class MainWindow(QtGui.QMainWindow):
             fileNames[i] = str(self.sidePanel.imageFileList.item(i).text())
 
         concat_frames = np.concatenate(self.videoFiles.values())
+        np.save(os.path.expanduser('~/Downloads/')+"concatenated", concat_frames)
         concat_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"concatenated.raw")
+        print("concatenated file saved to "+os.path.expanduser('~/Downloads/')+"concatenated")
 
 
 
@@ -917,7 +914,7 @@ class MainWindow(QtGui.QMainWindow):
         # Collect all user-defined variables (and variables immediately inferred from user-selections)
         width = int(self.sidePanel.vidWidthValue.text())
         height = int(self.sidePanel.vidHeightValue.text())
-        frame_ref = int(self.sidePanel.frameRefNameValue.text())
+        #frame_ref = int(self.sidePanel.frameRefNameValue.text())
         frame_rate = int(self.sidePanel.frameRateValue.text())
         f_high = float(self.sidePanel.f_highValue.text())
         f_low = float(self.sidePanel.f_lowValue.text())
@@ -933,15 +930,20 @@ class MainWindow(QtGui.QMainWindow):
         frames = fj.cheby_filter(frames, f_low, f_high, frame_rate)
         frames += avg_frames
         frames = fj.calculate_df_f0(frames)
+        np.save(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl", frames)
         frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
         print("temporal filter saved to"+os.path.expanduser(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw"))
         self.filtered_frames = frames
 
         #todo: make gsr a choice
-        self.gsr(self.roi_frames)
+        #self.gsr(self.roi_frames)
 
 
-    def gsr(self,frames):
+    def gsr(self):
+        if (self.filtered_frames == None):
+            print("Apply temporal filter first")
+            return
+        frames = self.filtered_frames
         # Collect all user-defined variables (and variables immediately inferred from user-selections)
         width = int(self.sidePanel.vidWidthValue.text())
         height = int(self.sidePanel.vidHeightValue.text())
@@ -954,7 +956,9 @@ class MainWindow(QtGui.QMainWindow):
 
         # Todo: incorporate gsr (needs mask filename)
         frames = fj.gsr(frames, width, height)
+        np.save(os.path.expanduser('~/Downloads/')+"gsr", frames)
         frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"gsr.raw")
+        print("gsr saved to "+os.path.expanduser('~/Downloads/')+"gsr")
         self.gsr_frames = frames
 
 
@@ -990,6 +994,10 @@ class MainWindow(QtGui.QMainWindow):
             #self.output_spc()
         else:
             print("You still need to apply a temporal filter")
+            print("Current selection set as temporal filter and gsr. Click again for SPC map")
+            self.filtered_frames = self.frames_dict[str(self.sidePanel.imageFileList.currentItem().text())]
+            self.gsr_frames = self.frames_dict[str(self.sidePanel.imageFileList.currentItem().text())]
+
 
 class MyTableWidget(QtGui.QTableWidget):  
     def __init__(self, x, y, parent = None):
