@@ -473,6 +473,11 @@ class MultiRoiViewBox(pg.ViewBox):
         if    self.img==None: return
         # todo: validate safe removal of line
         #else: self.img.setLookupTable(self.viewMode.lut)
+ 
+    def update_image_size(self, width, height):
+      if not self.img:
+        return
+      self.img.setRect(QtCore.QRect(0, 0, width, height))
        
     def showImage(self, arr):
         if arr==None: 
@@ -488,7 +493,6 @@ class MultiRoiViewBox(pg.ViewBox):
         proxy = pg.SignalProxy(self.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
         self.scene().sigMouseMoved.connect(self.mouseMoved)
         self.img.setImage(arr)
-        #self.img.setImage(arr, autoLevels=False)
         self.updateView()
 
 

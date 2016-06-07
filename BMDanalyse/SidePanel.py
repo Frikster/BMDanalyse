@@ -7,6 +7,7 @@
 from pyqtgraph.Qt import QtCore,QtGui
         
 class SidePanel(QtGui.QWidget):
+    mmpixel_changed = QtCore.pyqtSignal(float)
 
     def __init__(self, parent=None):
     
@@ -107,6 +108,16 @@ class SidePanel(QtGui.QWidget):
         grid.addWidget(self.temporalFilterButton, 1, 0)
         grid.addWidget(self.gsrButton, 1, 1)
         grid.addWidget(self.stdevButton, 2, 0)
+
+        hbox = QtGui.QHBoxLayout()
+        imageToolboxLayout.addLayout(hbox)
+        hbox.addWidget(QtGui.QLabel('mm/pixel:'))
+        sb = QtGui.QDoubleSpinBox()
+        sb.setRange(0.001, 9999.0)
+        sb.setSingleStep(0.01)
+        sb.setValue(0.04)
+        sb.valueChanged[float].connect(self.mmpixel_changed)
+        hbox.addWidget(sb)
 
     def createRoiMenu(self):
         self.roiMenu = popupMenu(self, self.buttRoiAdd)        
