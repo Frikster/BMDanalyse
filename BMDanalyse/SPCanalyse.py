@@ -84,13 +84,27 @@ class MainWindow(QtGui.QMainWindow):
         leftFrameLayout.setContentsMargins(0,0,5,0)
 
         # Left frame contents     
-        self.viewMain = GraphicsLayoutWidget()  # A GraphicsLayout within a GraphicsView
-        leftFrameLayout.addWidget(self.viewMain)
+        self.viewMain = pg.GraphicsView()
         self.viewMain.setMinimumSize(200,200)
+        leftFrameLayout.addWidget(self.viewMain)
+
+        l =  QtGui.QGraphicsGridLayout()
+        self.viewMain.centralWidget.setLayout(l)
+        l.setHorizontalSpacing(0)
+        l.setVerticalSpacing(0)
+
         self.vb = MultiRoiViewBox(lockAspect=True, enableMenu=True)
-        # Todo: Add axis here?
-        self.viewMain.addPlot()
-        self.viewMain.addItem(self.vb)
+
+        l.addItem(self.vb, 0, 1)
+        self.xScale = pg.AxisItem(orientation='bottom', linkView=self.vb)
+        self.xScale.setLabel(text="<span style='color: #ff0000; font-weight: bold'>X</span> <i>Axis</i>", units="s")
+        l.addItem(self.xScale, 1, 1)
+
+        self.yScale = pg.AxisItem(orientation='left', linkView=self.vb)
+        self.yScale.setLabel('Y Axis', units='V')
+        l.addItem(self.yScale, 0, 0)
+        
+
         # todo: uncomment as need be
         #self.vb.disableAutoRange()
         self.vb.enableAutoRange()
