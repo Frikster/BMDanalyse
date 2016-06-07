@@ -31,7 +31,7 @@ class SidePanel(QtGui.QWidget):
         # Image filelist
         imageFileListLabel = QtGui.QLabel("Loaded images")
         self.dtypeLabel = QtGui.QLabel("data type to be loaded")
-        self.dtypeValue = QtGui.QLineEdit("float32")
+        self.dtypeValue = QtGui.QLineEdit("uint8")
         self.frameRefNameLabel  = QtGui.QLabel("Frame reference for alignment")
         self.frameRefNameValue  = QtGui.QLineEdit("400")
         self.vidWidthLabel   = QtGui.QLabel("Width")
@@ -43,6 +43,7 @@ class SidePanel(QtGui.QWidget):
         self.concatButton = QtGui.QPushButton('Concatenate All')
         self.temporalFilterButton = QtGui.QPushButton('Temporal filter')
         self.gsrButton = QtGui.QPushButton('Global Signal Regression')
+        self.stdevButton = QtGui.QPushButton('Standard Deviation Map')
 
         # Image buttons
         self.buttImageAdd  = QtGui.QPushButton(self.icons['imageAddIcon'], "")
@@ -89,6 +90,7 @@ class SidePanel(QtGui.QWidget):
         imageToolboxLayout.addWidget(self.concatButton)
         imageToolboxLayout.addWidget(self.temporalFilterButton)
         imageToolboxLayout.addWidget(self.gsrButton)
+        imageToolboxLayout.addWidget(self.stdevButton)
 
     def createRoiMenu(self):
         self.roiMenu = popupMenu(self, self.buttRoiAdd)        
@@ -135,22 +137,23 @@ class SidePanel(QtGui.QWidget):
         self.roiInfoBox  = QtGui.QWidget()
         roiInfoBoxLayout = QtGui.QGridLayout()
         self.roiInfoBox.setLayout(roiInfoBoxLayout)
-        self.gsrNameLabel  = QtGui.QLabel("gsr")
-        self.gsrNameValue  = QtGui.QLineEdit("y")
         self.frameRateLabel   = QtGui.QLabel("Frame Rate (Hz)")
         self.frameRateValue   = QtGui.QLineEdit("30")
         self.f_lowLabel  = QtGui.QLabel("f_low")
         self.f_lowValue  = QtGui.QLineEdit("0.3")
         self.f_highLabel = QtGui.QLabel("f_high")
         self.f_highValue = QtGui.QLineEdit("3")
-        roiInfoBoxLayout.addWidget(self.gsrNameLabel, 0, 0)
-        roiInfoBoxLayout.addWidget(self.gsrNameValue, 0, 1)
+        self.SPC_map_mode_label = QtGui.QLabel("Click to set seed")
+        self.SPC_map_mode_value = QtGui.QCheckBox()
+
         roiInfoBoxLayout.addWidget(self.frameRateLabel, 1, 0)
         roiInfoBoxLayout.addWidget(self.frameRateValue, 1, 1)
         roiInfoBoxLayout.addWidget(self.f_lowLabel, 2, 0)
         roiInfoBoxLayout.addWidget(self.f_lowValue, 2, 1)
         roiInfoBoxLayout.addWidget(self.f_highLabel, 3, 0)
         roiInfoBoxLayout.addWidget(self.f_highValue, 3, 1)
+        roiInfoBoxLayout.addWidget(self.SPC_map_mode_label, 4, 0)
+        roiInfoBoxLayout.addWidget(self.SPC_map_mode_value, 4, 1)
         
         # ROI Toolbox
         self.roiToolbox  = QtGui.QFrame()

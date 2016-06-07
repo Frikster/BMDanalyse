@@ -26,6 +26,46 @@ import tifffile as tiff
 
 #starting_frame = 100
 
+def load_raw(filename, width, height, dat_type):
+    dat_type = np.dtype(dat_type)
+
+    with open(filename, "rb") as file:
+        frames = np.fromfile(file, dtype=dat_type)
+    try:
+        total_number_of_frames = int(np.size(frames) / (width * height * 3))
+        print("n_frames: " + str(total_number_of_frames))
+        frames = np.reshape(frames, (total_number_of_frames, width, height, 3))
+        frames = frames[:, :, :, 1]
+    except:
+        print("Reshape failed. Attempting single channel")
+        total_number_of_frames = int(np.size(frames)/(width*height))
+        print("n_frames: "+str(total_number_of_frames))
+        frames = np.reshape(frames, (total_number_of_frames, width, height))
+    #todo: note that you got rid of starting_frame!
+    # frames = frames[starting_frame:, :, :, 1]
+    frames = np.asarray(frames, dtype=dat_type)
+
+    return frames
+
+def load_tiff(filename):
+    imarray = tiff.imread(filename)
+    return imarray
+
+def load_npy(filename):
+    frames = np.load(filename)
+    frames[isnan(frames)] = 0
+    return frames
+
+def load_frames(filename, width, height, dat_type):
+    if filename.endswith('.tif'):
+        return load_tiff(filename)
+    elif filename.endswith(".raw"):
+         return load_raw(filename, width, height, dat_type)
+    elif filename.endswith(".npy"):
+        return load_npy(filename)
+    else:
+        print("unsupported file type")
+
 def get_frames(rgb_file, width, height, dat_type):
 
     if(rgb_file.endswith(".tif")):
