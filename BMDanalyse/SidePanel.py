@@ -7,6 +7,7 @@
 from pyqtgraph.Qt import QtCore,QtGui
         
 class SidePanel(QtGui.QWidget):
+    mmpixel_changed = QtCore.pyqtSignal(float)
 
     def __init__(self, parent=None):
     
@@ -25,6 +26,8 @@ class SidePanel(QtGui.QWidget):
         sidePanelLayout.addWidget(self.roiToolbox)        
         sidePanelLayout.setContentsMargins(0,0,0,0)
         self.setLayout(sidePanelLayout)
+
+        self.setMaximumWidth(300)
         
     def setupImageToolbox(self):
     
@@ -54,12 +57,13 @@ class SidePanel(QtGui.QWidget):
         imageToolTips      = ['Add image(s)', 'Remove selected image', 'Move image down', 'Move image up']
         for i in xrange(len(imageButtons)): 
             image = imageButtons[i]
-            image.setMinimumSize(self.buttMinimumSize)
+            #image.setMinimumSize(self.buttMinimumSize)
             image.setIconSize(self.iconSize)
             image.setToolTip(imageToolTips[i])  
 
         self.imageFileTools  = QtGui.QFrame()
-        imageFileToolsLayout = QtGui.QHBoxLayout() 
+        imageFileToolsLayout = QtGui.QVBoxLayout() 
+        imageFileToolsLayout.setContentsMargins(0,0,0,0)
         self.imageFileTools.setLayout(imageFileToolsLayout) 
         self.imageFileTools.setLineWidth(1)
         self.imageFileTools.setFrameStyle(QtGui.QFrame.StyledPanel)            
@@ -67,6 +71,7 @@ class SidePanel(QtGui.QWidget):
         imageFileToolsLayout.addWidget(self.buttImageRem)        
         imageFileToolsLayout.addWidget(self.buttImageDown)
         imageFileToolsLayout.addWidget(self.buttImageUp)
+        imageFileToolsLayout.addSpacerItem(QtGui.QSpacerItem(0, 1, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding))
 
         # Image Toolbox (containing imageFileList + imageFileList buttons)
         self.imageToolbox = QtGui.QFrame()
@@ -74,23 +79,45 @@ class SidePanel(QtGui.QWidget):
         self.imageToolbox.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Raised)
         imageToolboxLayout = QtGui.QVBoxLayout()
         self.imageToolbox.setLayout(imageToolboxLayout)       
+
+        grid = QtGui.QGridLayout()
+        imageToolboxLayout.addLayout(grid)
+        grid.addWidget(self.dtypeLabel, 0, 0)
+        grid.addWidget(self.dtypeValue, 0, 1)
+        grid.addWidget(self.frameRefNameLabel, 1, 0)
+        grid.addWidget(self.frameRefNameValue, 1, 1)
+
+        hbox = QtGui.QHBoxLayout()
+        imageToolboxLayout.addLayout(hbox)
+        hbox.addWidget(self.vidWidthLabel)
+        hbox.addWidget(self.vidWidthValue)
+        hbox.addWidget(self.vidHeightLabel)
+        hbox.addWidget(self.vidHeightValue)
+
         imageToolboxLayout.addWidget(imageFileListLabel)
 
-        imageToolboxLayout.addWidget(self.dtypeLabel)
-        imageToolboxLayout.addWidget(self.dtypeValue)
-        imageToolboxLayout.addWidget(self.frameRefNameLabel)
-        imageToolboxLayout.addWidget(self.frameRefNameValue)
-        imageToolboxLayout.addWidget(self.vidWidthLabel)
-        imageToolboxLayout.addWidget(self.vidWidthValue)
-        imageToolboxLayout.addWidget(self.vidHeightLabel)
-        imageToolboxLayout.addWidget(self.vidHeightValue)
-        imageToolboxLayout.addWidget(self.imageFileList)         
-        imageToolboxLayout.addWidget(self.imageFileTools)
-        imageToolboxLayout.addWidget(self.alignButton)
-        imageToolboxLayout.addWidget(self.concatButton)
-        imageToolboxLayout.addWidget(self.temporalFilterButton)
-        imageToolboxLayout.addWidget(self.gsrButton)
-        imageToolboxLayout.addWidget(self.stdevButton)
+        hbox = QtGui.QHBoxLayout()
+        imageToolboxLayout.addLayout(hbox)
+        hbox.addWidget(self.imageFileTools)
+        hbox.addWidget(self.imageFileList)         
+
+        grid = QtGui.QGridLayout()
+        imageToolboxLayout.addLayout(grid)
+        grid.addWidget(self.alignButton, 0, 0)
+        grid.addWidget(self.concatButton, 0, 1)
+        grid.addWidget(self.temporalFilterButton, 1, 0)
+        grid.addWidget(self.gsrButton, 1, 1)
+        grid.addWidget(self.stdevButton, 2, 0)
+
+        hbox = QtGui.QHBoxLayout()
+        imageToolboxLayout.addLayout(hbox)
+        hbox.addWidget(QtGui.QLabel('mm/pixel:'))
+        sb = QtGui.QDoubleSpinBox()
+        sb.setRange(0.001, 9999.0)
+        sb.setSingleStep(0.01)
+        sb.setValue(0.04)
+        sb.valueChanged[float].connect(self.mmpixel_changed)
+        hbox.addWidget(sb)
 
     def createRoiMenu(self):
         self.roiMenu = popupMenu(self, self.buttRoiAdd)        
@@ -113,7 +140,7 @@ class SidePanel(QtGui.QWidget):
         roiToolTips      = ['Add ROI','Delete ROI','Save ROI','Copy ROI','Load ROI']
         for i in xrange(len(roiButtons)): 
             button = roiButtons[i]
-            button.setMinimumSize(self.buttMinimumSize)
+            #button.setMinimumSize(self.buttMinimumSize)
             button.setIconSize(self.iconSize)
             button.setToolTip(roiToolTips[i])
 
@@ -123,15 +150,16 @@ class SidePanel(QtGui.QWidget):
 
         # ROI Buttons Frame       
         self.roiButtonsFrame = QtGui.QFrame()
-        roiButtonsLayout     = QtGui.QHBoxLayout()
+        roiButtonsLayout     = QtGui.QGridLayout()
+        roiButtonsLayout.setContentsMargins(0,0,0,0)
         self.roiButtonsFrame.setLayout(roiButtonsLayout)
         self.roiButtonsFrame.setLineWidth(1)
         self.roiButtonsFrame.setFrameStyle(QtGui.QFrame.StyledPanel)
-        roiButtonsLayout.addWidget(self.buttRoiAdd)
-        roiButtonsLayout.addWidget(self.buttRoiLoad) 
-        roiButtonsLayout.addWidget(self.buttRoiCopy)
-        roiButtonsLayout.addWidget(self.buttRoiSave)
-        roiButtonsLayout.addWidget(self.buttRoiRem)
+        roiButtonsLayout.addWidget(self.buttRoiAdd, 0, 0)
+        roiButtonsLayout.addWidget(self.buttRoiLoad, 1, 0) 
+        roiButtonsLayout.addWidget(self.buttRoiCopy, 2, 0)
+        roiButtonsLayout.addWidget(self.buttRoiSave, 0, 1)
+        roiButtonsLayout.addWidget(self.buttRoiRem, 0, 1)
         
         # ROI Info Box
         self.roiInfoBox  = QtGui.QWidget()
@@ -157,12 +185,13 @@ class SidePanel(QtGui.QWidget):
         
         # ROI Toolbox
         self.roiToolbox  = QtGui.QFrame()
-        roiToolboxLayout = QtGui.QVBoxLayout()
+        roiToolboxLayout = QtGui.QHBoxLayout()
+        roiToolboxLayout.setContentsMargins(0,0,0,0)
         self.roiToolbox.setLayout(roiToolboxLayout)
         self.roiToolbox.setLineWidth(2)
         self.roiToolbox.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Raised)   
-        roiToolboxLayout.addWidget(self.roiButtonsFrame)
         roiToolboxLayout.addWidget(self.roiInfoBox) 
+        roiToolboxLayout.addWidget(self.roiButtonsFrame)
       
     def addImageToList(self,filename):
         self.imageFileList.addItem(filename) 

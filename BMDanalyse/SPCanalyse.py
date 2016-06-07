@@ -53,6 +53,8 @@ class MainWindow(QtGui.QMainWindow):
         #self.roi_frames = None
         #self.gsr_frames = None
         self.mask = None
+
+        self.mmpixel = 0.04
         
     def loadIcons(self):
         """ Load icons """
@@ -83,12 +85,13 @@ class MainWindow(QtGui.QMainWindow):
         leftFrame.setFrameStyle(QtGui.QFrame.Panel)
         leftFrameLayout.setContentsMargins(0,0,5,0)
 
-        # Left frame contents
+        # Left frame contents     
         self.viewMain = pg.GraphicsView()
-        self.viewMain.setMinimumSize(200, 200)
+        self.viewMain.setMinimumSize(200,200)
         leftFrameLayout.addWidget(self.viewMain)
 
-        l = QtGui.QGraphicsGridLayout()
+        l =  QtGui.QGraphicsGridLayout()
+
         self.viewMain.centralWidget.setLayout(l)
         l.setHorizontalSpacing(0)
         l.setVerticalSpacing(0)
@@ -223,6 +226,8 @@ class MainWindow(QtGui.QMainWindow):
         self.sidePanel.gsrButton.clicked.connect(self.gsr)
         self.sidePanel.stdevButton.clicked.connect(self.compute_stdev_map)
         self.vb.clicked.connect(self.on_vbc_clicked)
+ 
+        self.sidePanel.mmpixel_changed[float].connect(self.update_mmpixel)
         #self.vb.mouseClickEvent.connect(self.compute_spc_map)
         #self.vb.sigROIchanged.connect(self.updateROItools)
 
@@ -231,6 +236,12 @@ class MainWindow(QtGui.QMainWindow):
     def on_vbc_clicked(self, x, y):
         y = int(self.sidePanel.vidHeightValue.text())-y
         self.compute_spc_map(x, y)
+
+    def update_mmpixel(self, mmpixel):
+      self.mmpixel = mmpixel
+      width = int(self.sidePanel.vidWidthValue.text())
+      height = int(self.sidePanel.vidHeightValue.text())
+      self.vb.update_image_size(width * self.mmpixel, height * self.mmpixel)
 
     def onAbout(self):
         """ About BMDanalyse message"""
@@ -297,9 +308,10 @@ class MainWindow(QtGui.QMainWindow):
 
         # Show image in Main window
         self.vb.enableAutoRange()
+        self.vb.setXRange(0, 10)
         if self.sidePanel.imageFileList.currentRow() == -1: self.sidePanel.imageFileList.setCurrentRow(0)
         self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
-        self.vb.disableAutoRange()
+        #self.vb.disableAutoRange()
 
 
     def removeImage(self):
@@ -334,11 +346,14 @@ class MainWindow(QtGui.QMainWindow):
         self.preprocess_for_showImage(imgarr)
         self.vb.showImage(self.arr)
 
+        self.update_mmpixel(self.mmpixel)
+
 
     def preprocess_for_showImage(self, imgarr):
         imgarr = imgarr.swapaxes(0,1)
         if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
         elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]
+       
         self.arr = imgarr
     
     def getImageToDisplay(self):
