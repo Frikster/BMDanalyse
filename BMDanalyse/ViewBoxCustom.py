@@ -72,7 +72,7 @@ class MultiRoiViewBox(pg.ViewBox):
 
     def __init__(self,parent=None,border=None,lockAspect=False,enableMouse=True,invertY=False,enableMenu=True,name=None):
         pg.ViewBox.__init__(self,parent,border,lockAspect,enableMouse,invertY,enableMenu,name)
-        
+
         self.rois = []
         self.currentROIindex = None
         self.img      = None
@@ -88,6 +88,15 @@ class MultiRoiViewBox(pg.ViewBox):
 
         self.mouseclickeventCount = 0
 
+        l = QtGui.QGraphicsGridLayout()
+        l.setHorizontalSpacing(0)
+        l.setVerticalSpacing(0)
+        xScale = pg.AxisItem(orientation='bottom', linkView=self)
+        l.addItem(xScale, 1, 1)
+        yScale = pg.AxisItem(orientation='left', linkView=self)
+        l.addItem(yScale, 0, 0)
+        xScale.setLabel(text="<span style='color: #ff0000; font-weight: bold'>X</span> <i>Axis</i>", units="s")
+        yScale.setLabel('Y Axis', units='V')
 
     def getContextMenus(self,ev):
         return None

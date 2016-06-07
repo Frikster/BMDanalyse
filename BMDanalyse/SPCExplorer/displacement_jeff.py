@@ -1,4 +1,4 @@
-from filter_jeff import get_green_frames, get_frames, filter2_test_j
+from filter_jeff import load_frames, filter2_test_j
 from math import pow, sqrt
 import os
 import numpy as np
@@ -111,19 +111,16 @@ def find_min_ref(lor):
 
 
 
-def get_distance_var(lof, width, height, frame_oi, frames_dict):
+def get_distance_var(lof, frame_oi, frames_dict):
 
-
-    filtered_frames=[]
+    filtered_frames = []
     print('')
     print('Now in get_distance_var')
     print(lof)
     for f in lof:
         print(f)
         #todo: Load frames only once and pass frames around as paramater
-        #frames = frames_dict[f]
-        frames = get_green_frames(f, width, height, "uint8")
-        print((type(frames)))
+        frames = frames_dict[f]
         filtered_frames.append(filter2_test_j(frames[frame_oi,:,:]))
 
     print("Getting all the distances.." )
