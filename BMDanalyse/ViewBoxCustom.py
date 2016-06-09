@@ -81,8 +81,8 @@ class MultiRoiViewBox(pg.ViewBox):
         self.img      = None
         self.menu     = None # Override pyqtgraph ViewBoxMenu 
         self.menu     = self.getMenu(None)       
-        self.NORMAL   = ViewMode(0,matplotlib.cm.gray)  
-        self.DEXA     = ViewMode(1,matplotlib.cm.jet)
+        self.NORMAL   = ViewMode(0, matplotlib.cm.gray)
+        self.DEXA     = ViewMode(1, matplotlib.cm.jet)
         self.viewMode = self.NORMAL
         self.drawROImode = False
         self.drawingROI  = None
