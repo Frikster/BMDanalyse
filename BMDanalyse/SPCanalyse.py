@@ -63,6 +63,8 @@ class MainWindow(QtGui.QMainWindow):
         self.img_shape = (256.0, 256.0)
 
         self.origin_mode = False
+        self.showing_spc = False
+        self.showing_std = False
 
         self.kelly_colors = dict(vivid_yellow=(255, 179, 0),
                             strong_purple=(128, 62, 117),
@@ -306,15 +308,30 @@ class MainWindow(QtGui.QMainWindow):
     def on_vbc_hovering(self, x, y):
         x = x/self.mmpixel
         y = y / self.mmpixel
-        if self.spc_map == None or x > 255 or y > 255 or x < 0 or y < 0:
+        #todo: FIX HARDCODED DIMENSIONS!
+        if (self.showing_spc == False and self.showing_std == False) or x > 255 or y > 255 or x < 0 or y < 0:
             return
-        spc_map = self.spc_map.swapaxes(0, 1)
-        spc_map = spc_map[:, ::-1]
-        if(not math.isnan(spc_map[int(x), int(y)])):
-            print("Correlation/Standard deviation value at crosshair: " + str(spc_map[int(x+5), int(y+5)]))
+        if (self.showing_spc == True and self.showing_std == True):
+            raise ArithmeticError("It should not be possible (yet) to display both maps at once.")
+
+        if self.showing_spc:
+            spc_map = self.spc_map.swapaxes(0, 1)
+            spc_map = spc_map[:, ::-1]
+            if(not math.isnan(spc_map[int(x), int(y)])):
+                self.statusBar().showMessage(
+                    "Correlation/Standard deviation value at crosshair: " + str(spc_map[int(x), int(y)]))
+        else:
+            std_map = self.st_map.swapaxes(0, 1)
+            std_map = std_map[:, ::-1]
+            if (not math.isnan(std_map[int(x), int(y)])):
+                self.statusBar().showMessage(
+                    "Correlation/Standard deviation value at crosshair: " + str(std_map[int(x), int(y)]))
+
+
             #print(str(int(x))+" , "+ str(int(y)))
         #y = int(self.sidePanel.vidHeightValue.text())-y
         #print("Correlation/Standard deviation value at crosshair: "+self.spc_map[x, y])
+
 
 
     def update_mmpixel(self, mmpixel):
@@ -908,9 +925,11 @@ class MainWindow(QtGui.QMainWindow):
         dtype_string = str(self.sidePanel.dtypeValue.text())
         self.st_map = fj.standard_deviation(fj.get_frames(fileName, width, height, dtype_string))
 
-        self.st_map = plt.cm.jet((self.st_map)) * 255
+        self.st_map_colour = plt.cm.jet((self.st_map)) * 255
 
-        self.preprocess_for_showImage(self.st_map)
+        self.preprocess_for_showImage(self.st_map_colour)
+        self.showing_spc = False
+        self.showing_std = True
         self.vb.showImage(self.arr)
 
 
@@ -938,6 +957,8 @@ class MainWindow(QtGui.QMainWindow):
         self.spc_map_colour = plt.cm.jet((self.spc_map))*255
 
         self.preprocess_for_showImage(self.spc_map_colour)
+        self.showing_spc = True
+        self.showing_std = False
         self.vb.showImage(self.arr)
 
 

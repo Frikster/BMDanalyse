@@ -45,8 +45,8 @@ class SidePanel(QtGui.QWidget):
         self.alignButton = QtGui.QPushButton('Align All to top')
         self.concatButton = QtGui.QPushButton('Concatenate All')
         self.temporalFilterButton = QtGui.QPushButton('Temporal filter')
-        self.gsrButton = QtGui.QPushButton('Global Signal Regression')
-        self.stdevButton = QtGui.QPushButton('Standard Deviation Map')
+        self.gsrButton = QtGui.QPushButton('GSR')
+        self.stdevButton = QtGui.QPushButton('Std. Map')
         self.recenter_button = QtGui.QPushButton('Set Origin')
 
         # Image buttons
