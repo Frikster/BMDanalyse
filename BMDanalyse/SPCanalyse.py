@@ -27,6 +27,8 @@ from ViewBoxCustom import MultiRoiViewBox, ImageAnalysisViewBox
 from SidePanel import SidePanel
 from version import __version__
 
+import logging
+
 absDirPath = os.path.dirname(__file__)  
     
 class MainWindow(QtGui.QMainWindow):
@@ -57,8 +59,8 @@ class MainWindow(QtGui.QMainWindow):
         self.spc_map = None
 
         self.mmpixel = 0.04
-        self.origin = (0, 0)
-        self.img_shape = (256, 256)
+        self.origin = (0.0, 0.0)
+        self.img_shape = (256.0, 256.0)
 
         self.origin_mode = False
         
@@ -957,6 +959,9 @@ def run():
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
+
+    logging.basicConfig(level=logging.DEBUG)
+
     app = QtGui.QApplication(sys.argv)
     window = MainWindow()
     window.show()

@@ -16,6 +16,7 @@ import types
 import matplotlib.pyplot as plt
 import SPCExplorer.filter_jeff as fj
 import SPCExplorer.displacement_jeff as dj
+import logging
 
 __all__=['ImageAnalysisViewBox','ViewMode','MultiRoiViewBox']
 
@@ -66,15 +67,14 @@ class ViewMode():
 
 
 class MultiRoiViewBox(pg.ViewBox):
-
     sigROIchanged = QtCore.Signal(object)
     clicked = QtCore.pyqtSignal(float, float)
-    #todo: how to seperate these two slots and how to get the below one working??
     hovering = QtCore.pyqtSignal(float, float)
 
-
-    def __init__(self,parent=None,border=None,lockAspect=False,enableMouse=True,invertY=False,enableMenu=True,name=None):
-        pg.ViewBox.__init__(self,parent,border,lockAspect,enableMouse,invertY,enableMenu,name)
+    def __init__(self, parent=None, border=None, lockAspect=False,
+                 enableMouse=True, invertY=False, enableMenu=True, name=None):
+        pg.ViewBox.__init__(self, parent, border, lockAspect,
+                            enableMouse, invertY, enableMenu, name)
 
         self.rois = []
         self.currentROIindex = None
@@ -477,7 +477,7 @@ class MultiRoiViewBox(pg.ViewBox):
     def update_rect(self, x1, y1, x2, y2):
       if not self.img:
         return
-      self.img.setRect(QtCore.QRect(x1, y1, x2, y2))
+      self.img.setRect(QtCore.QRectF(x1, y1, x2, y2))
        
     def showImage(self, arr):
         if arr==None: 
