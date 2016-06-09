@@ -69,6 +69,9 @@ class MultiRoiViewBox(pg.ViewBox):
 
     sigROIchanged = QtCore.Signal(object)
     clicked = QtCore.pyqtSignal(int, int)
+    #todo: how to seperate these two slots and how to get the below one working??
+    hovering = QtCore.pyqtSignal(float, float)
+
 
     def __init__(self,parent=None,border=None,lockAspect=False,enableMouse=True,invertY=False,enableMenu=True,name=None):
         pg.ViewBox.__init__(self,parent,border,lockAspect,enableMouse,invertY,enableMenu,name)
@@ -126,23 +129,20 @@ class MultiRoiViewBox(pg.ViewBox):
         #     proxy = pg.SignalProxy(self.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
         #     self.scene().sigMouseMoved.connect(self.mouseMoved)
 
-    #Todo: get this working so that mouse vLine and hLine display
     def mouseMoved(self, ev):
-        pos = ev ## using signal proxy turns original arguments into a tuple (or not...)
-
-        # try:
-        #     if self.sceneBoundingRect().contains(pos) and not self.drawROImode:
-        #        #print(pos)
-        #        #print(self.mapToItem(self.img,pos))
-        # except:
-        #     print("Now what?")
-        if self.sceneBoundingRect().contains(pos) and not self.drawROImode:
-            mousePoint = self.mapSceneToView(pos)
+        #pos = ev ## using signal proxy turns original arguments into a tuple (or not...)
+        if self.sceneBoundingRect().contains(ev) and not self.drawROImode:
+            mousePoint = self.mapSceneToView(ev)
             index = int(mousePoint.x())
             #if index > 0 and index < len(data1):
             #    label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>,   <span style='color: green'>y2=%0.1f</span>" % (mousePoint.x(), data1[index], data2[index]))
             self.vLine.setPos(mousePoint.x())
             self.hLine.setPos(mousePoint.y())
+
+            #pos = self.mapToItem(self.img, ev.pos())
+        mousePoint = self.mapSceneToView(ev)
+        # print(str(mousePoint.x())+","+str(mousePoint.y()))
+        self.hovering.emit(mousePoint.x(), mousePoint.y())
 
     def addPolyRoiRequest(self):
         """Function to add a Polygon ROI"""

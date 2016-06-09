@@ -6,6 +6,7 @@
 import FileDialog
 
 import os, sys, matplotlib, matplotlib.pyplot
+import math
 import itertools
 from os.path import expanduser
 
@@ -53,6 +54,7 @@ class MainWindow(QtGui.QMainWindow):
         #self.roi_frames = None
         #self.gsr_frames = None
         self.mask = None
+        self.spc_map = None
 
         self.mmpixel = 0.04
         
@@ -134,7 +136,6 @@ class MainWindow(QtGui.QMainWindow):
         self.createActions() 
 
     def createMenus(self):
-        
         # Menus 
         menubar          = self.menuBar()
         self.fileMenu    = menubar.addMenu('&File')
@@ -226,16 +227,36 @@ class MainWindow(QtGui.QMainWindow):
         self.sidePanel.gsrButton.clicked.connect(self.gsr)
         self.sidePanel.stdevButton.clicked.connect(self.compute_stdev_map)
         self.vb.clicked.connect(self.on_vbc_clicked)
+        self.vb.hovering.connect(self.on_vbc_hovering)
  
         self.sidePanel.mmpixel_changed[float].connect(self.update_mmpixel)
         #self.vb.mouseClickEvent.connect(self.compute_spc_map)
         #self.vb.sigROIchanged.connect(self.updateROItools)
 
-
     @QtCore.pyqtSlot(int, int)
     def on_vbc_clicked(self, x, y):
         y = int(self.sidePanel.vidHeightValue.text())-y
         self.compute_spc_map(x, y)
+
+        if self.spc_map == None:
+            return
+        y = int(self.sidePanel.vidHeightValue.text())-y
+
+
+    @QtCore.pyqtSlot(float, float)
+    def on_vbc_hovering(self, x, y):
+        x = x/self.mmpixel
+        y = y / self.mmpixel
+        if self.spc_map == None or x > 255 or y > 255 or x < 0 or y < 0:
+            return
+        spc_map = self.spc_map.swapaxes(0, 1)
+        spc_map = spc_map[:, ::-1]
+        if(not math.isnan(spc_map[int(x), int(y)])):
+            print("Correlation/Standard deviation value at crosshair: " + str(spc_map[int(x+5), int(y+5)]))
+            #print(str(int(x))+" , "+ str(int(y)))
+        #y = int(self.sidePanel.vidHeightValue.text())-y
+        #print("Correlation/Standard deviation value at crosshair: "+self.spc_map[x, y])
+
 
     def update_mmpixel(self, mmpixel):
       self.mmpixel = mmpixel
@@ -308,10 +329,9 @@ class MainWindow(QtGui.QMainWindow):
 
         # Show image in Main window
         self.vb.enableAutoRange()
-        self.vb.setXRange(0, 10)
         if self.sidePanel.imageFileList.currentRow() == -1: self.sidePanel.imageFileList.setCurrentRow(0)
         self.showImage(str(self.sidePanel.imageFileList.currentItem().text()))
-        #self.vb.disableAutoRange()
+        self.vb.disableAutoRange()
 
 
     def removeImage(self):
@@ -406,7 +426,7 @@ class MainWindow(QtGui.QMainWindow):
         #todo: clean up your dirty long code.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] turns up everywhere
         roi_frames = (frames * combined_mask[np.newaxis, :, :])
         np.save(os.path.expanduser('~/Downloads/')+"ROI", roi_frames)
-        roi_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"ROI.raw")
+        #roi_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"ROI.raw")
         print("ROI saved to " + os.path.expanduser('~/Downloads/')+"ROI")
 
     def roi_activity_plots(self):
@@ -439,8 +459,19 @@ class MainWindow(QtGui.QMainWindow):
 
         roi_plots = []
         for mask in arrRegion_masks:
+            mask_size = np.count_nonzero(mask)
             roi_frames = (frames * mask[np.newaxis, :, :])
-            roi_plots.append(np.average(np.average(roi_frames, axis=1), axis=1))
+            roi_frames_flatten = np.ndarray.sum(np.ndarray.sum(roi_frames, axis = 1), axis = 1)
+            roi_plots.append(roi_frames_flatten/mask_size)
+
+            # mask_ready = np.repeat(mask, len(roi_frames))
+            # roi_frames_masked = np.ma.array(roi_frames, mask=mask_ready)
+            # #mask_bool = mask.astype(bool)
+            # #mask[mask == 0] = False
+            # #mask[mask == 1] = True
+            # a = np.ma.mean(roi_frames, mask = mask_bool)
+            # a.mean()
+            # roi_plots.append(np.average(np.average(roi_frames, axis=1), axis=1))
 
         plot = self.roi_activity_plots_win.addPlot(title="Multiple curves")
         for plot_pts in roi_plots:
@@ -752,7 +783,7 @@ class MainWindow(QtGui.QMainWindow):
 
         concat_frames = np.concatenate(vids.values())
         np.save(os.path.expanduser('~/Downloads/')+"concatenated", concat_frames)
-        concat_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"concatenated.raw")
+        #concat_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"concatenated.raw")
         print("concatenated file saved to "+os.path.expanduser('~/Downloads/')+"concatenated")
 
 
@@ -775,9 +806,9 @@ class MainWindow(QtGui.QMainWindow):
         frames += avg_frames
         frames = fj.calculate_df_f0(frames)
         np.save(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl", frames)
-        frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
-        print("temporal filter saved to"+os.path.expanduser(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw"))
-        self.filtered_frames = frames
+        #frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
+        print("temporal filter saved to"+os.path.expanduser(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl"))
+        # self.filtered_frames = frames
 
     def gsr(self):
         fileName = str(self.sidePanel.imageFileList.currentItem().text())
@@ -788,7 +819,7 @@ class MainWindow(QtGui.QMainWindow):
 
         frames = fj.gsr(frames, width, height)
         np.save(os.path.expanduser('~/Downloads/')+"gsr", frames)
-        frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"gsr.raw")
+        #frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"gsr.raw")
         print("gsr saved to "+os.path.expanduser('~/Downloads/')+"gsr")
 
     def compute_stdev_map(self):
@@ -825,9 +856,9 @@ class MainWindow(QtGui.QMainWindow):
         self.spc_map[y-1, x+1] = 1.0
 
         # transorm self.image into rgb
-        self.spc_map = plt.cm.jet((self.spc_map))*255
+        self.spc_map_colour = plt.cm.jet((self.spc_map))*255
 
-        self.preprocess_for_showImage(self.spc_map)
+        self.preprocess_for_showImage(self.spc_map_colour)
         self.vb.showImage(self.arr)
 
 

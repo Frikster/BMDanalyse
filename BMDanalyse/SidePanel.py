@@ -243,12 +243,12 @@ class SidePanel(QtGui.QWidget):
             items.append(self.imageFileList.item(index))        
         return items
         
-    # def updateRoiInfoBox(self,name="",pos="",size="",angle=""):
-    #     print("Obsolete function")
-    #     self.gsrNameValue.setText(name)
-    #     self.frameRateValue.setText(pos)
-    #     self.f_lowValue.setText(size)
-    #     self.f_highValue.setText(angle)
+    def updateRoiInfoBox(self,name="",pos="",size="",angle=""):
+        print("Obsolete function")
+        self.gsrNameValue.setText(name)
+        self.frameRateValue.setText(pos)
+        self.f_lowValue.setText(size)
+        self.f_highValue.setText(angle)
         
 class popupMenu(QtGui.QWidget):
 
