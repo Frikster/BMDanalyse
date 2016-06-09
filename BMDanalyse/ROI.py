@@ -207,6 +207,9 @@ class selectableROI(object):
         self.menu = None
         self.setActive(True)
 
+    def set_color(self, r, g, b):
+      self.penActive.setColor(QtGui.QColor(r, g, b))
+
     def setActive(self,isActive):
         self.isActive = isActive
         if isActive:
