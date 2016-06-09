@@ -68,7 +68,7 @@ class ViewMode():
 class MultiRoiViewBox(pg.ViewBox):
 
     sigROIchanged = QtCore.Signal(object)
-    clicked = QtCore.pyqtSignal(int, int)
+    clicked = QtCore.pyqtSignal(float, float)
     #todo: how to seperate these two slots and how to get the below one working??
     hovering = QtCore.pyqtSignal(float, float)
 
@@ -474,10 +474,10 @@ class MultiRoiViewBox(pg.ViewBox):
         # todo: validate safe removal of line
         #else: self.img.setLookupTable(self.viewMode.lut)
  
-    def update_image_size(self, width, height):
+    def update_rect(self, x1, y1, x2, y2):
       if not self.img:
         return
-      self.img.setRect(QtCore.QRect(0, 0, width, height))
+      self.img.setRect(QtCore.QRect(x1, y1, x2, y2))
        
     def showImage(self, arr):
         if arr==None: 

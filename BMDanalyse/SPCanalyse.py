@@ -57,6 +57,10 @@ class MainWindow(QtGui.QMainWindow):
         self.spc_map = None
 
         self.mmpixel = 0.04
+        self.origin = (0, 0)
+        self.img_shape = (256, 256)
+
+        self.origin_mode = False
         
     def loadIcons(self):
         """ Load icons """
@@ -226,6 +230,7 @@ class MainWindow(QtGui.QMainWindow):
         self.sidePanel.temporalFilterButton.clicked.connect(self.temporal_filter)
         self.sidePanel.gsrButton.clicked.connect(self.gsr)
         self.sidePanel.stdevButton.clicked.connect(self.compute_stdev_map)
+        self.sidePanel.recenter_button.clicked.connect(self.init_origin_mode)
         self.vb.clicked.connect(self.on_vbc_clicked)
         self.vb.hovering.connect(self.on_vbc_hovering)
  
@@ -233,8 +238,36 @@ class MainWindow(QtGui.QMainWindow):
         #self.vb.mouseClickEvent.connect(self.compute_spc_map)
         #self.vb.sigROIchanged.connect(self.updateROItools)
 
-    @QtCore.pyqtSlot(int, int)
+    def init_origin_mode(self):
+      self.origin_mode = True
+      self.vb.setCursor(QtCore.Qt.CrossCursor)
+  
+    def leave_origin_mode(self):
+      self.vb.setCursor(QtCore.Qt.ArrowCursor)
+      self.origin_mode = False
+
+    def set_origin(self, x, y):
+      self.origin = (x, y)
+      self.update_rect()
+      self.leave_origin_mode()
+
+    def update_rect(self):
+      w, h = self.img_shape
+      ox, oy = self.origin
+
+      x = -ox * self.mmpixel
+      y = -oy * self.mmpixel
+      w = w * self.mmpixel
+      h = h * self.mmpixel
+ 
+      self.vb.update_rect(x, y, w, h)
+
+    @QtCore.pyqtSlot(float, float)
     def on_vbc_clicked(self, x, y):
+        if self.origin_mode:
+           self.set_origin(x, y)
+           return
+
         y = int(self.sidePanel.vidHeightValue.text())-y
         self.compute_spc_map(x, y)
 
@@ -262,7 +295,8 @@ class MainWindow(QtGui.QMainWindow):
       self.mmpixel = mmpixel
       width = int(self.sidePanel.vidWidthValue.text())
       height = int(self.sidePanel.vidHeightValue.text())
-      self.vb.update_image_size(width * self.mmpixel, height * self.mmpixel)
+      self.img_shape = (width, height)
+      self.update_rect()
 
     def onAbout(self):
         """ About BMDanalyse message"""
