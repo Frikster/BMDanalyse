@@ -47,6 +47,7 @@ class SidePanel(QtGui.QWidget):
         self.temporalFilterButton = QtGui.QPushButton('Temporal filter')
         self.gsrButton = QtGui.QPushButton('Global Signal Regression')
         self.stdevButton = QtGui.QPushButton('Standard Deviation Map')
+        self.recenter_button = QtGui.QPushButton('Set Origin')
 
         # Image buttons
         self.buttImageAdd  = QtGui.QPushButton(self.icons['imageAddIcon'], "")
@@ -108,6 +109,7 @@ class SidePanel(QtGui.QWidget):
         grid.addWidget(self.temporalFilterButton, 1, 0)
         grid.addWidget(self.gsrButton, 1, 1)
         grid.addWidget(self.stdevButton, 2, 0)
+        grid.addWidget(self.recenter_button, 2, 1)
 
         hbox = QtGui.QHBoxLayout()
         imageToolboxLayout.addLayout(hbox)
