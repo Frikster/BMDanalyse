@@ -93,7 +93,7 @@ class MainWindow(QtGui.QMainWindow):
     def loadIcons(self):
         """ Load icons """
         self.icons = dict([
-            ('BMDanalyseIcon', QtGui.QIcon(os.path.join(absDirPath,"icons","logo.png"))),
+            ('BMDanalyseIcon', QtGui.QIcon(os.path.join(absDirPath,"icons","cbhlogo.png"))),
             ('imageAddIcon',   QtGui.QIcon(os.path.join(absDirPath,"icons","file_add.png"))),
             ('imageRemIcon',   QtGui.QIcon(os.path.join(absDirPath,"icons","file_delete2.png"))),
             ('imageDownIcon',  QtGui.QIcon(os.path.join(absDirPath,"icons","arrow-up-2.png"))),
@@ -134,11 +134,11 @@ class MainWindow(QtGui.QMainWindow):
 
         l.addItem(self.vb, 0, 1)
         self.xScale = pg.AxisItem(orientation='bottom', linkView=self.vb)
-        self.xScale.setLabel(text="<span style='color: #ff0000; font-weight: bold'>X</span> <i>Axis</i>", units="s")
+        self.xScale.setLabel(text="<span style='color: #ff0000; font-weight: bold'>X</span> <i>Width</i>", units="mm")
         l.addItem(self.xScale, 1, 1)
 
         self.yScale = pg.AxisItem(orientation='left', linkView=self.vb)
-        self.yScale.setLabel('Y Axis', units='V')
+        self.yScale.setLabel(text="<span style='color: #ff0000; font-weight: bold'>Y</span> <i>Height</i>", units='mm')
         l.addItem(self.yScale, 0, 0)
 
         # todo: uncomment as need be
@@ -159,7 +159,7 @@ class MainWindow(QtGui.QMainWindow):
         UIwindowSplitter.addWidget(self.sidePanel)  
  
         # Application window
-        self.setWindowTitle('BMDanalyse')
+        self.setWindowTitle('SPCanalyse')
         self.setWindowIcon(self.icons['BMDanalyseIcon'])
         self.resize(1000, 500)
        
@@ -502,6 +502,7 @@ class MainWindow(QtGui.QMainWindow):
         # Dont forget to set Endian value and set to 64 bit
         #todo: clean up your dirty long code.videoFiles[str(self.sidePanel.imageFileList.currentItem().text())] turns up everywhere
         roi_frames = (frames * combined_mask[np.newaxis, :, :])
+
         np.save(os.path.expanduser('~/Downloads/')+"ROI", roi_frames)
         #roi_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"ROI.raw")
         print("ROI saved to " + os.path.expanduser('~/Downloads/')+"ROI")
@@ -990,7 +991,7 @@ class MyTableWidget(QtGui.QTableWidget):
             if self.currentItemText!=None: item.setText(self.currentItemText)
             icon = self.parent().windowIcon()
             self.errorMessage.setWindowIcon(icon)
-            self.errorMessage.setWindowTitle('BMDanalyse')
+            self.errorMessage.setWindowTitle('SPCanalyse')
             self.errorMessage.setText('Input error: Value must be a number')
             self.errorMessage.setIcon(QtGui.QMessageBox.Warning)           
             self.errorMessage.open()            
