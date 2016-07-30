@@ -4,18 +4,18 @@
 
 # This file is part of BMDanalyse - See LICENSE.txt for information on usage and redistribution
 
-from pyqtgraph.Qt import QtCore,QtGui
+from pyqtgraph.Qt import QtCore, QtGui
         
 class SidePanel(QtGui.QWidget):
     mmpixel_changed = QtCore.pyqtSignal(float)
 
     def __init__(self, parent=None):
     
-        QtGui.QWidget.__init__(self,parent)
+        QtGui.QWidget.__init__(self, parent)
         
         self.setMinimumWidth(250)
-        self.buttMinimumSize = QtCore.QSize(36,36)
-        self.iconSize        = QtCore.QSize(24,24)         
+        self.buttMinimumSize = QtCore.QSize(36, 36)
+        self.iconSize        = QtCore.QSize(24, 24)
         self.icons           = self.parent().icons
 
         self.setupImageToolbox()
@@ -24,7 +24,7 @@ class SidePanel(QtGui.QWidget):
         sidePanelLayout = QtGui.QVBoxLayout()
         sidePanelLayout.addWidget(self.imageToolbox)
         sidePanelLayout.addWidget(self.roiToolbox)        
-        sidePanelLayout.setContentsMargins(0,0,0,0)
+        sidePanelLayout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(sidePanelLayout)
 
         self.setMaximumWidth(300)

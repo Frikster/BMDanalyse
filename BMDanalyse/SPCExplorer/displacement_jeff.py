@@ -112,7 +112,6 @@ def find_min_ref(lor):
 
 
 def get_distance_var(lof, frame_oi, frames_dict):
-
     filtered_frames = []
     print('')
     print('Now in get_distance_var')

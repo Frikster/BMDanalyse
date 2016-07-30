@@ -28,6 +28,7 @@ from SidePanel import SidePanel
 from version import __version__
 
 import logging
+import psutil
 
 absDirPath = os.path.dirname(__file__)  
     
@@ -68,11 +69,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self.kelly_colors = dict(vivid_yellow=(255, 179, 0),
                             strong_purple=(128, 62, 117),
-                            vivid_orange=(255, 104, 0),
-                            very_light_blue=(166, 189, 215),
-                            vivid_red=(193, 0, 32),
-                            grayish_yellow=(206, 162, 98),
-                            medium_gray=(129, 112, 102))
+                            vivid_red=(193, 0, 32))
+                            # vivid_orange=(255, 104, 0),
+                            # very_light_blue=(166, 189, 215),
+                            # grayish_yellow=(206, 162, 98),
+                            # medium_gray=(129, 112, 102))
 
         self.worse_kelly_colors =   dict(# these aren't good for people with defective color vision:
                             vivid_green=(0, 125, 52),
@@ -117,14 +118,14 @@ class MainWindow(QtGui.QMainWindow):
         leftFrame.setLayout(leftFrameLayout)
         leftFrame.setLineWidth(0)
         leftFrame.setFrameStyle(QtGui.QFrame.Panel)
-        leftFrameLayout.setContentsMargins(0,0,5,0)
+        leftFrameLayout.setContentsMargins(0, 0, 5, 0)
 
         # Left frame contents     
         self.viewMain = pg.GraphicsView()
-        self.viewMain.setMinimumSize(200,200)
+        self.viewMain.setMinimumSize(200, 200)
         leftFrameLayout.addWidget(self.viewMain)
 
-        l =  QtGui.QGraphicsGridLayout()
+        l = QtGui.QGraphicsGridLayout()
 
         self.viewMain.centralWidget.setLayout(l)
         l.setHorizontalSpacing(0)
@@ -172,7 +173,7 @@ class MainWindow(QtGui.QMainWindow):
         menubar          = self.menuBar()
         self.fileMenu    = menubar.addMenu('&File')
         self.roiMenu     = menubar.addMenu('&ROIs')
-        self.submenu     = self.roiMenu.addMenu(self.icons['roiAddIcon'],"Add ROI")
+        self.submenu     = self.roiMenu.addMenu(self.icons['roiAddIcon'], "Add ROI")
         self.analyseMenu = menubar.addMenu('&Analyse')
         self.aboutMenu   = menubar.addMenu('A&bout')
         
@@ -180,8 +181,8 @@ class MainWindow(QtGui.QMainWindow):
         # Actions for File menu
         self.loadImageAct   = QtGui.QAction(self.icons['imageAddIcon'], "&Load image(s)",        self, shortcut="Ctrl+L")
         self.removeImageAct = QtGui.QAction(self.icons['imageRemIcon'], "&Remove current image", self, shortcut="Ctrl+X") 
-        self.exitAct        = QtGui.QAction("&Quit", self, shortcut="Ctrl+Q",statusTip="Exit the application")
-        fileMenuActions  = [self.loadImageAct,self.removeImageAct,self.exitAct]
+        self.exitAct        = QtGui.QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Exit the application")
+        fileMenuActions  = [self.loadImageAct, self.removeImageAct, self.exitAct]
         fileMenuActFuncs = [self.loadVideos, self.removeImage, self.close]
         for i in xrange(len(fileMenuActions)):
             action   = fileMenuActions[i]
@@ -346,6 +347,11 @@ class MainWindow(QtGui.QMainWindow):
         author  ='Cornelis Dirk Haupt'
         date    ='2016'
         version = self.__version__
+
+        xr, yr = self.vb.viewRange()
+        self.vb.addPolyRoiRequest()
+
+        self.vb.addROI()
             
         QtGui.QMessageBox.about(self, 'About BMDanalyse', 
             """
@@ -366,7 +372,8 @@ class MainWindow(QtGui.QMainWindow):
             <td>%s</td>
             </tr>            
             </table></p>
-            """ % (author,version,date))
+            """ % (author, version, date))
+
 
     def updateROItools(self,roi=None):
         """ Update ROI info box in side panel """ 
@@ -374,8 +381,8 @@ class MainWindow(QtGui.QMainWindow):
             self.sidePanel.updateRoiInfoBox()
         else:           
             roiState    = roi.getState()
-            posx,posy   = roiState['pos']
-            sizex,sizey = roiState['size']
+            posx, posy   = roiState['pos']
+            sizex, sizey = roiState['size']
             angle       = roiState['angle']
             name  = roi.name
             pos   = '(%.3f, %.3f)' % (posx, posy)
@@ -385,12 +392,12 @@ class MainWindow(QtGui.QMainWindow):
     
     def loadVideos(self):
         """ Load an image to be analysed """
-        fileNames = QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"),QtCore.QDir.currentPath())
+        fileNames = QtGui.QFileDialog.getOpenFileNames(self, self.tr("Load images"), QtCore.QDir.currentPath())
         
         # Fix for PySide. PySide doesn't support QStringList types. PyQt4 getOpenFileNames returns a QStringList, whereas PySide
         # returns a type (the first entry being the list of filenames).
         if isinstance(fileNames,types.TupleType): fileNames = fileNames[0]
-        if hasattr(QtCore,'QStringList') and isinstance(fileNames, QtCore.QStringList): fileNames = [str(i) for i in fileNames]
+        if hasattr(QtCore, 'QStringList') and isinstance(fileNames, QtCore.QStringList): fileNames = [str(i) for i in fileNames]
 
         width = int(self.sidePanel.vidWidthValue.text())
         height = int(self.sidePanel.vidHeightValue.text())
@@ -622,7 +629,7 @@ class MainWindow(QtGui.QMainWindow):
         imageName      = imageFilenames[self.imageWinIndex]
         self.imageWin.vb.img1.setImage(self.videoFiles[str(imageName.text())], autoLevels=False)
         self.imageWin.vb.img2.setImage(self.imageWin.imagesRGB[self.imageWinIndex], autoLevels=False)
-        self.imageWin.currLabel.setText("%i / %i" % (self.imageWinIndex+1,len(imageFilenames)))
+        self.imageWin.currLabel.setText("%i / %i" % (self.imageWinIndex+1, len(imageFilenames)))
         
     def showImageWin(self):
         self.createImageWin()
@@ -883,8 +890,6 @@ class MainWindow(QtGui.QMainWindow):
         #concat_frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"concatenated.raw")
         print("concatenated file saved to "+os.path.expanduser('~/Downloads/')+"concatenated")
 
-
-
     def temporal_filter(self):
         # Collect all user-defined variables (and variables immediately inferred from user-selections)
         fileName = str(self.sidePanel.imageFileList.currentItem().text())
@@ -906,6 +911,9 @@ class MainWindow(QtGui.QMainWindow):
         #frames.astype(dtype_string).tofile(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl.raw")
         print("temporal filter saved to"+os.path.expanduser(os.path.expanduser('~/Downloads/')+"dfoverf0_avg_framesIncl"))
         # self.filtered_frames = frames
+
+        process = psutil.Process(os.getpid())
+        print process.memory_info().rss
 
     def gsr(self):
         fileName = str(self.sidePanel.imageFileList.currentItem().text())

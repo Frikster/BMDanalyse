@@ -18,16 +18,15 @@ import SPCExplorer.filter_jeff as fj
 import SPCExplorer.displacement_jeff as dj
 import logging
 
-__all__=['ImageAnalysisViewBox','ViewMode','MultiRoiViewBox']
+__all__=['ImageAnalysisViewBox', 'ViewMode', 'MultiRoiViewBox']
 
 class ImageAnalysisViewBox(pg.ViewBox):
-
     """
     Custom ViewBox used to over-ride the context menu. I don't want the full context menu, 
     just a view all and an export. Export does not call a dialog, just prompts user for filename.
     """
 
-    def __init__(self,parent=None,border=None,lockAspect=False,enableMouse=True,invertY=False,enableMenu=True,name=None):
+    def __init__(self, parent=None, border=None, lockAspect=False, enableMouse=True, invertY=False, enableMenu=True, name=None):
         pg.ViewBox.__init__(self, parent, border, lockAspect, enableMouse, invertY, enableMenu, name)
    
         self.menu = None # Override pyqtgraph ViewBoxMenu 
@@ -178,7 +177,7 @@ class MultiRoiViewBox(pg.ViewBox):
         roi.sigCopyRequested.connect(self.copyROI)
         roi.sigSaveRequested.connect(self.saveROI)            
 
-    def drawPolygonRoi(self,ev):
+    def drawPolygonRoi(self, ev):
         "Function to draw a polygon ROI"
         roi = self.drawingROI
         pos = self.mapSceneToView(ev.scenePos())
@@ -339,20 +338,20 @@ class MultiRoiViewBox(pg.ViewBox):
         
     def addROI(self, pos=None, size=None, angle=0.0):
         """ Add an ROI to the ViewBox """    
-        xr,yr = self.viewRange()
+        xr, yr = self.viewRange()
         if pos is None:
             posx = xr[0]+0.05*(xr[1]-xr[0])
             posy = yr[0]+0.05*(yr[1]-yr[0])
-            pos  = [posx,posy]
+            pos = [posx, posy]
         if size is None:
-            xsize  = 0.25*(xr[1]-xr[0])
-            ysize  = 0.25*(yr[1]-yr[0])
-            xysize = min(xsize,ysize)
-            if xysize==0: xysize=100
-            size = [xysize,xysize]  
-        roi = RectROIcustom(pos,size,angle,removable=True,pen=(255,0,0))
+            xsize = 0.25*(xr[1]-xr[0])
+            ysize = 0.25*(yr[1]-yr[0])
+            xysize = min(xsize, ysize)
+            if xysize == 0: xysize = 100
+            size = [xysize, xysize]
+        roi = RectROIcustom(pos, size, angle, removable=True, pen=(255, 0, 0))
         # Setup signals
-        roi.setName('ROI-%i'% self.getROIid()) 
+        roi.setName('ROI-%i' % self.getROIid())
         roi.sigClicked.connect(self.selectROI)
         roi.sigRegionChanged.connect(self.roiChanged)
         roi.sigRemoveRequested.connect(self.removeROI)
@@ -367,8 +366,8 @@ class MultiRoiViewBox(pg.ViewBox):
 
     def sortROIs(self):
         """ Sort self.rois by roi name and adjust self.currentROIindex as necessary """
-        if len(self.rois)==0: return 
-        if self.currentROIindex==None:
+        if len(self.rois) == 0: return
+        if self.currentROIindex == None:
             self.rois.sort()  
         else:
             roiCurrent = self.rois[self.currentROIindex]
