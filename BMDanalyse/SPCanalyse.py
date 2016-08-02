@@ -342,6 +342,7 @@ class MainWindow(QtGui.QMainWindow):
       self.img_shape = (width, height)
       self.update_rect()
 
+    clicked = QtCore.pyqtSignal(QtGui.QMouseEvent)
     def onAbout(self):
         """ About BMDanalyse message"""
         author  ='Cornelis Dirk Haupt'
@@ -349,9 +350,131 @@ class MainWindow(QtGui.QMainWindow):
         version = self.__version__
 
         xr, yr = self.vb.viewRange()
-        self.vb.addPolyRoiRequest()
+        # xr = [x + self.origin[0] for x in xr]
+        # yr = [y + self.origin[1] for y in yr]
+        frame_shape = self.reference_frames_dict[str(self.sidePanel.imageFileList.currentItem().text())].shape
 
-        self.vb.addROI()
+        # pos(ii).name = 'M2'; pos(ii).y = 2.5; pos(ii).x = 1; ii = ii + 1;
+        # (1/(mm/pixel) * 2.5) is the y position for M2 *from bregma*
+        half_length = 3
+        m2_x = (1*(1/self.mmpixel))+self.origin[0]
+        m2_y = (2.5*(1/self.mmpixel))+self.origin[1]
+        m1_x = (1.5*(1/self.mmpixel))+self.origin[0]
+        m1_y = (1.75*(1/self.mmpixel))+self.origin[1]
+        ac_x = (0*(1/self.mmpixel))+self.origin[0]
+        ac_y = (0.5*(1/self.mmpixel))+self.origin[1]
+        hl_x = (2*(1/self.mmpixel))+self.origin[0]
+        hl_y = (0*(1/self.mmpixel))+self.origin[1]
+        bc_x = (3.5*(1/self.mmpixel))+self.origin[0]
+        bc_y = (-1*(1/self.mmpixel))+self.origin[1]
+        rs_x = (0.5*(1/self.mmpixel))+self.origin[0]
+        rs_y = (-2.5*(1/self.mmpixel))+self.origin[1]
+        v1_x = (2.5*(1/self.mmpixel))+self.origin[0]
+        v1_y = (-2.5*(1/self.mmpixel))+self.origin[1]
+        locs = [(m2_x, m2_y), (m1_x, m1_y), (ac_x, ac_y), (hl_x, hl_y), (bc_x, bc_y), (rs_x, rs_y), (v1_x, v1_y)]
+
+        # Map val in a frame size frame_size to the view_range
+        def map_to_view_range(val, frame_size, view_range):
+            return ((val / frame_size)*(view_range[1]-view_range[0]))+view_range[0]
+
+        for tup in locs:
+            # Convert these to values in the view range
+            x1 = map_to_view_range(tup[0] - half_length, frame_shape[0], xr)
+            x2 = map_to_view_range(tup[0] - half_length, frame_shape[0], xr)
+            x3 = map_to_view_range(tup[0] + half_length, frame_shape[0], xr)
+            x4 = map_to_view_range(tup[0] + half_length, frame_shape[0], xr)
+            y1 = map_to_view_range(tup[1] - half_length, frame_shape[1], yr)
+            y2 = map_to_view_range(tup[1] + half_length, frame_shape[1], yr)
+            y3 = map_to_view_range(tup[1] + half_length, frame_shape[1], yr)
+            y4 = map_to_view_range(tup[1] - half_length, frame_shape[1], yr)
+            self.vb.addPolyRoiRequest()
+            self.vb.autoDrawPolygonRoi(QtCore.QPointF(x1, y1))
+            self.vb.autoDrawPolygonRoi(QtCore.QPointF(x2, y2))
+            self.vb.autoDrawPolygonRoi(QtCore.QPointF(x3, y3))
+            self.vb.autoDrawPolygonRoi(QtCore.QPointF(x4, y4))
+            self.vb.autoDrawPolygonRoi(QtCore.QPointF(x4, y4))
+            self.vb.autoDrawPolygonRoi(finished=True)
+
+        # Convert these to values in the view range
+        # m21_x = map_to_view_range(m2_x - 3, frame_shape[0], xr)
+        # m22_x = map_to_view_range(m2_x - 3, frame_shape[0], xr)
+        # m23_x = map_to_view_range(m2_x + 3, frame_shape[0], xr)
+        # m24_x = map_to_view_range(m2_x + 3, frame_shape[0], xr)
+        #
+        # m21_y = map_to_view_range(m2_y - 3, frame_shape[1], yr)
+        # m22_y = map_to_view_range(m2_y + 3, frame_shape[1], yr)
+        # m23_y = map_to_view_range(m2_y + 3, frame_shape[1], yr)
+        # m24_y = map_to_view_range(m2_y - 3, frame_shape[1], yr)
+        #
+        # self.vb.addPolyRoiRequest()
+        # self.vb.autoDrawPolygonRoi(QtCore.QPointF(m21_x, m21_y))
+        # self.vb.autoDrawPolygonRoi(QtCore.QPointF(m22_x, m22_y))
+        # self.vb.autoDrawPolygonRoi(QtCore.QPointF(m23_x, m23_y))
+        # self.vb.autoDrawPolygonRoi(QtCore.QPointF(m24_x, m24_y))
+        # self.vb.autoDrawPolygonRoi(QtCore.QPointF(m24_x, m24_y))
+        # self.vb.autoDrawPolygonRoi(finished=True)
+
+
+        # mousePressEvent = QtGui.QMouseEvent(
+        #     QtCore.QEvent.MouseButtonPress,
+        #     QtCore.QPoint(xr[0], yr[0]),
+        #     QtCore.Qt.LeftButton,
+        #     QtCore.Qt.LeftButton,
+        #     QtCore.Qt.NoModifier,
+        # )
+        # mousePressEvent = pg.GraphicsScene.mouseEvents.MouseClickEvent(QtGui.QMouseClickEvent(
+        #     QtCore.QEvent.MouseButtonPress,
+        #     QtCore.QPoint(xr[1], yr[1]),
+        #     QtCore.Qt.RightButton,
+        #     QtCore.Qt.RightButton,
+        #     QtCore.Qt.NoModifier,
+        # ))
+
+        #self.clicked.emit(mousePressEvent)
+        #QtCore.QCoreApplication.postEvent(self, mousePressEvent)
+
+        # mousePressEvent = QtGui.QMouseEvent(
+        #     QtCore.QEvent.MouseButtonPress,
+        #     QtCore.QPoint(xr[1], yr[0]),
+        #     QtCore.Qt.LeftButton,
+        #     QtCore.Qt.LeftButton,
+        #     QtCore.Qt.NoModifier,
+        # )
+        # self.vb.drawPolygonRoi(mousePressEvent)
+        # QtCore.QCoreApplication.postEvent(self, mousePressEvent)
+        #
+        # mousePressEvent = QtGui.QMouseEvent(
+        #     QtCore.QEvent.MouseButtonPress,
+        #     QtCore.QPoint(xr[0], yr[1]),
+        #     QtCore.Qt.LeftButton,
+        #     QtCore.Qt.LeftButton,
+        #     QtCore.Qt.NoModifier,
+        # )
+        # self.vb.drawPolygonRoi(mousePressEvent)
+        # QtCore.QCoreApplication.postEvent(self, mousePressEvent)
+        #
+        # mousePressEvent = QtGui.QMouseEvent(
+        #     QtCore.QEvent.MouseButtonPress,
+        #     QtCore.QPoint(xr[1], yr[1]),
+        #     QtCore.Qt.LeftButton,
+        #     QtCore.Qt.LeftButton,
+        #     QtCore.Qt.NoModifier,
+        # )
+        # QtCore.QCoreApplication.postEvent(self, mousePressEvent)
+        #
+        # mousePressEvent = QtGui.QMouseClickEvent(
+        #     QtCore.QEvent.MouseButtonPress,
+        #     QtCore.QPoint(xr[1], yr[1]),
+        #     QtCore.Qt.RightButton,
+        #     QtCore.Qt.RightButton,
+        #     QtCore.Qt.NoModifier,
+        # )
+        # self.vb.drawPolygonRoi(mousePressEvent)
+        # QtCore.QCoreApplication.postEvent(self, mousePressEvent)
+
+        #self.vb.drawPolygonRoi(ev)
+
+        #self.vb.addROI()
             
         QtGui.QMessageBox.about(self, 'About BMDanalyse', 
             """
