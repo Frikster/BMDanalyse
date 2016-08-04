@@ -210,7 +210,7 @@ class SidePanel(QtGui.QWidget):
         if (currentRow+1) <= self.imageFileList.count()-1: 
             item = self.imageFileList.currentItem()
             self.imageFileList.takeItem(currentRow)
-            self.imageFileList.insertItem(currentRow+1,item.text())
+            self.imageFileList.insertItem(currentRow+1, item.text())
             self.imageFileList.setCurrentRow(currentRow+1)
         # Show current item as selected
         #self.imageFileList.setItemSelected(self.imageFileList.currentItem(),True)
