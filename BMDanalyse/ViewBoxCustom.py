@@ -155,8 +155,8 @@ class MultiRoiViewBox(pg.ViewBox):
         for r in self.rois:
             r.setActive(True)
             
-    def addPolyLineROI(self,handlePositions):
-        roi = PolyLineROIcustom(handlePositions=handlePositions,removable=True)
+    def addPolyLineROI(self, handlePositions):
+        roi = PolyLineROIcustom(handlePositions=handlePositions, removable=True)
         roi.setName('ROI-%i'% self.getROIid())
         self.addItem(roi)                      # Add roi to viewbox
         self.rois.append(roi)                  # Add to list of rois

@@ -613,7 +613,7 @@ class MainWindow(QtGui.QMainWindow):
         for mask_key in arrRegion_masks.keys():
             mask_size = np.count_nonzero(arrRegion_masks[mask_key])
             roi_frames = (frames * arrRegion_masks[mask_key][np.newaxis, :, :])
-            roi_frames_flatten = np.ndarray.sum(np.ndarray.sum(roi_frames, axis = 1), axis = 1)
+            roi_frames_flatten = np.ndarray.sum(np.ndarray.sum(roi_frames, axis=1), axis=1)
             roi_plots[mask_key] = roi_frames_flatten/mask_size
 
             #roi_plots.append(roi_frames_flatten/mask_size)

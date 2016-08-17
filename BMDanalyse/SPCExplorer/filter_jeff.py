@@ -392,8 +392,11 @@ def get_correlation_map(seed_x, seed_y, frames):
     width = frames.shape[1]
     height = frames.shape[2]
     # Reshape into time and space
-    frames[frames==0]=np.nan
+    #frames[frames==0]=np.nan
     frames = np.reshape(frames, (frames.shape[0], width*height))
+
+    np.save("C:/Users/Cornelis Dirk Haupt/Downloads/bmd", frames)
+    #frames = np.load("C:/Users/Cornelis Dirk Haupt/spc.npy")
 
     print(np.shape(frames))
     #correlation_map = []
